@@ -65,11 +65,20 @@ const SetPasswordPage = ({ fetchPasswordPolicy, passwordPolicy }) => {
   const [passwordScore, setPasswordScore] = useState(0);
   const IS_PASSWORD_SECURED = passwordScore >= 2;
 
+  // #####
+
   useEffect(() => {
-    const search = new URLSearchParams(location.search);
-    setCredentials({ token: search.get("token") });
+    const search = new URLSearchParams(window.location.search);
+
+    setCredentials((currentCredentials) => ({
+      ...currentCredentials,
+      token: search.get("token") || "",
+      username: search.get("username") || "",
+    }));
+
     fetchPasswordPolicy();
   }, [fetchPasswordPolicy]);
+  // ####
 
   const handlePasswordChange = (password) => {
     const { feedback, score } = validatePassword(password, passwordPolicy, formatMessage, formatMessageWithValues);
@@ -138,13 +147,19 @@ const SetPasswordPage = ({ fetchPasswordPolicy, passwordPolicy }) => {
             <Box p={6} width={450}>
               <Grid container spacing={2} direction="column" alignItems="stretch">
                 <Grid item>
-                  <TextInput
-                    required
-                    type="text"
-                    label={formatMessage("username.label")}
-                    fullWidth
-                    onChange={(username) => setCredentials({ ...credentials, username })}
-                  />
+                <TextInput
+                  required
+                  type="text"
+                  label={formatMessage("username.label")}
+                  fullWidth
+                  value={credentials.username || ""}
+                  onChange={(username) =>
+                    setCredentials((currentCredentials) => ({
+                      ...currentCredentials,
+                      username,
+                    }))
+                  }
+                />
                 </Grid>
                 <Grid item>
                   <TextInput

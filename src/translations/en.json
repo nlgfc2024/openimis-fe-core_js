@@ -48,6 +48,7 @@
   "core.LoginPage.pageTitle": "Log In",
   "core.LoginPage.forgotPassword": "Forgot Password ?",
   "core.ForgotPasswordPage.pageTitle": "Forgot Password ?",
+  "core.ForgotPasswordPage.requestError": "An error occurred while processing your request. Please try again later.",
   "core.ForgotPasswordPage.submitBtn": "Submit",
   "core.ForgotPasswordPage.username.label": "Username",
   "core.ForgotPasswordPage.recoverTitle": "Recover your account",
