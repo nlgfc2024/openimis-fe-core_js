@@ -78,7 +78,8 @@ const ForgotPasswordPage = (props) => {
                     <TextInput
                       required
                       readOnly={isLoading}
-                      label={formatMessage("username.label")}
+                      module="core.ForgotPasswordPage"
+                      label="username.label"
                       fullWidth
                       onChange={(username) => setUsername(username)}
                     />

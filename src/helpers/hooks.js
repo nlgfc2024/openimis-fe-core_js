@@ -96,6 +96,7 @@ export const useGraphqlQuery = (operation, variables, config = {}) => {
 
 const DEFAULT_GRAPHQL_MUTATION_CONFIG = {
   wait: true,
+  trackMutation: true,
 };
 export const useGraphqlMutation = (operation, config) => {
   config = { ...DEFAULT_GRAPHQL_MUTATION_CONFIG, ...config };
@@ -114,7 +115,7 @@ export const useGraphqlMutation = (operation, config) => {
           input,
         };
         const result = await dispatch(
-          graphqlMutation(operation, variables, config.type, { operation, input }, config.wait),
+          graphqlMutation(operation, variables, config.type, { operation, input }, config.wait, {}, config.trackMutation),
         );
 
         // Handle graphql errors
