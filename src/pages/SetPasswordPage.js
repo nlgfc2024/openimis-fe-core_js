@@ -10,7 +10,7 @@ import { useGraphqlMutation } from "../helpers/hooks";
 import { connect } from "react-redux";
 import { bindActionCreators } from "redux";
 import { fetchPasswordPolicy } from "../actions";
-import { validatePassword } from '../helpers/passwordValidator';
+import { validatePassword } from "../helpers/passwordValidator";
 import { passwordGenerator } from "../helpers/passwordGenerator";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import VisibilityOffIcon from "@material-ui/icons/VisibilityOff";
@@ -39,7 +39,6 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-
 const SetPasswordPage = ({ fetchPasswordPolicy, passwordPolicy }) => {
   const classes = useStyles();
   const history = useHistory();
@@ -65,8 +64,6 @@ const SetPasswordPage = ({ fetchPasswordPolicy, passwordPolicy }) => {
   const [passwordScore, setPasswordScore] = useState(0);
   const IS_PASSWORD_SECURED = passwordScore >= 2;
 
-  // #####
-
   useEffect(() => {
     const search = new URLSearchParams(window.location.search);
 
@@ -78,7 +75,6 @@ const SetPasswordPage = ({ fetchPasswordPolicy, passwordPolicy }) => {
 
     fetchPasswordPolicy();
   }, [fetchPasswordPolicy]);
-  // ####
 
   const handlePasswordChange = (password) => {
     const { feedback, score } = validatePassword(password, passwordPolicy, formatMessage, formatMessageWithValues);
@@ -147,19 +143,19 @@ const SetPasswordPage = ({ fetchPasswordPolicy, passwordPolicy }) => {
             <Box p={6} width={450}>
               <Grid container spacing={2} direction="column" alignItems="stretch">
                 <Grid item>
-                <TextInput
-                  required
-                  type="text"
-                  label={formatMessage("username.label")}
-                  fullWidth
-                  value={credentials.username || ""}
-                  onChange={(username) =>
-                    setCredentials((currentCredentials) => ({
-                      ...currentCredentials,
-                      username,
-                    }))
-                  }
-                />
+                  <TextInput
+                    required
+                    type="text"
+                    label={formatMessage("username.label")}
+                    fullWidth
+                    value={credentials.username || ""}
+                    onChange={(username) =>
+                      setCredentials((currentCredentials) => ({
+                        ...currentCredentials,
+                        username,
+                      }))
+                    }
+                  />
                 </Grid>
                 <Grid item>
                   <TextInput
