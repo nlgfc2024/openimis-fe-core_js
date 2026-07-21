@@ -50,28 +50,6 @@ function hasJwtCookie() {
   return typeof document !== "undefined" && document.cookie.split("; ").some((cookie) => cookie.startsWith("JWT="));
 }
 
-function isPublicAuthRoute() {
-  if (typeof window === "undefined") {
-    return false;
-  }
-  const pathname = window.location.pathname;
-  return ["/", "/front", "/login", "/forgot_password", "/set_password", "/front/login", "/front/forgot_password", "/front/set_password"].some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`),
-  );
-}
-
-function isAuthFlowRequest(body) {
-  const requestBody = String(body || "");
-  return [
-    "tokenAuth",
-    "refreshToken",
-    "getCsrfToken",
-    "resetPassword",
-    "setPassword",
-    "passwordPolicy",
-  ].some((operation) => requestBody.includes(operation));
-}
-
 function getCsrfToken() {
   const CSRF_TOKEN_NAME = 'csrftoken';
   const CSRF_NOT_FOUND = null;
@@ -419,23 +397,26 @@ export function login(credentials) {
     if (credentials) {
       const mutation = `mutation authenticate($username: String!, $password: String!) {
             tokenAuth(username: $username, password: $password) {
-              token
+              refreshExpiresIn
               passwordExpired
+              passwordExpiryWarning
+              passwordExpiresInDays
+              passwordExpiresAt
               resetEmailSent
               username
             }
           }`;
 
       try {
+        const loginCsrfToken = getCsrfToken();
         const response = await dispatch(
-          graphqlMutation(mutation, credentials, ["CORE_AUTH_LOGIN_REQ", "CORE_AUTH_LOGIN_RESP", "CORE_AUTH_ERR"], {}, false),
+          graphqlMutation(mutation, credentials, ["CORE_AUTH_LOGIN_REQ", "CORE_AUTH_LOGIN_RESP", "CORE_AUTH_ERR"], {}, false, {
+            "X-CSRFToken": loginCsrfToken
+          }),
         );
         const responsePayload = response?.payload ?? response;
         const responseData = responsePayload?.data ?? responsePayload;
         const responseErrors = responsePayload?.errors ?? response?.errors;
-        if (process.env.NODE_ENV === "development") {
-          console.debug("Login tokenAuth response", { responseData, responseErrors });
-        }
 
         if (responseErrors?.length > 0) {
           const errorMessage = responseErrors[0].message;
@@ -461,15 +442,14 @@ export function login(credentials) {
           };
         }
 
-        if (!authData?.token) {
+        if (!authData?.refreshExpiresIn && !authData?.refresh_expires_in) {
           return {
             loginStatus: "CORE_AUTH_ERR",
             message: "INCORRECT_CREDENTIALS",
           };
         }
         
-        const jwtToken = authData.token;
-        const csrfResponse = await dispatch(fetchCsrfToken(jwtToken));
+        const csrfResponse = await dispatch(fetchCsrfToken());
         const csrfResponsePayload = csrfResponse?.payload ?? csrfResponse;
         const csrfResponseData = csrfResponsePayload?.data ?? csrfResponsePayload;
         const csrfResponseErrors = csrfResponsePayload?.errors ?? csrfResponse?.errors;
@@ -488,7 +468,13 @@ export function login(credentials) {
 
 
         const action = await dispatch(loadUser());
-        return { loginStatus: action.type, message: action?.payload?.response?.detail ?? "" };
+        return {
+          loginStatus: action.type,
+          message: action?.payload?.response?.detail ?? "",
+          passwordExpiryWarning: authData.passwordExpiryWarning || authData.password_expiry_warning,
+          passwordExpiresInDays: authData.passwordExpiresInDays ?? authData.password_expires_in_days,
+          passwordExpiresAt: authData.passwordExpiresAt || authData.password_expires_at,
+        };
       } catch (error) {
         dispatch(authError({ message: error.message }));
         return { loginStatus: "CORE_AUTH_ERR", message: error.message };
@@ -516,11 +502,10 @@ export function fetchCsrfToken(jwtToken) {
         csrfToken
       }
     }`;
+    const headers = jwtToken ? { "Authorization": `JWT ${jwtToken}` } : {};
 
     return dispatch(
-      graphqlMutation(csrfQuery, {}, ["CORE_AUTH_CSRTOKEN_REQ", "CORE_AUTH_CSRTOKEN_RESP", "CORE_AUTH_ERR"], {}, false, {
-        "Authorization": `Bearer ${jwtToken}`,
-      }),
+      graphqlMutation(csrfQuery, {}, ["CORE_AUTH_CSRTOKEN_REQ", "CORE_AUTH_CSRTOKEN_RESP", "CORE_AUTH_ERR"], {}, false, headers),
     );
   };
 }

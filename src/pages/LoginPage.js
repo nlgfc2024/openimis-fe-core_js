@@ -40,7 +40,7 @@ const LoginPage = ({ logo }) => {
   const history = useHistory();
   const dispatch = useDispatch();
   const modulesManager = useModulesManager();
-  const { formatMessage } = useTranslations("core.LoginPage", modulesManager);
+  const { formatMessage, formatMessageWithValues } = useTranslations("core.LoginPage", modulesManager);
   const [credentials, setCredentials] = useState({});
   const [serverResponse, setServerResponse] = useState({ loginStatus: "", message: null });
   const auth = useAuthentication();
@@ -89,6 +89,14 @@ const LoginPage = ({ logo }) => {
       if (loginStatus === "CORE_AUTH_ERR") {
         setAuthenticating(false);
       } else {
+        if (response.passwordExpiryWarning) {
+          const alertMessage = response.passwordExpiresInDays === 0
+            ? formatMessage("passwordExpiryWarning.messageToday")
+            : formatMessageWithValues("passwordExpiryWarning.message", {
+                days: response.passwordExpiresInDays,
+              });
+          dispatch(coreAlert(formatMessage("passwordExpiryWarning.title"), alertMessage));
+        }
         history.push("/");
       }
     } catch (error) {

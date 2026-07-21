@@ -8,7 +8,6 @@ import { useHistory } from "../helpers/history";
 import Helmet from "../helpers/Helmet";
 import { useGraphqlMutation } from "../helpers/hooks";
 import { connect, useDispatch } from "react-redux";
-import { bindActionCreators } from "redux";
 import { clearConfirm, fetchPasswordPolicy } from "../actions";
 import { validatePassword } from "../helpers/passwordValidator";
 import { passwordGenerator } from "../helpers/passwordGenerator";
@@ -47,7 +46,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const SetPasswordPage = ({ fetchPasswordPolicy, passwordPolicy }) => {
+const SetPasswordPage = ({ passwordPolicy }) => {
   const classes = useStyles();
   const history = useHistory();
   const dispatch = useDispatch();
@@ -76,6 +75,7 @@ const SetPasswordPage = ({ fetchPasswordPolicy, passwordPolicy }) => {
 
   useEffect(() => {
     dispatch(clearConfirm(false));
+    dispatch(fetchPasswordPolicy());
     const search = new URLSearchParams(window.location.search);
 
     setCredentials((currentCredentials) => ({
@@ -84,8 +84,7 @@ const SetPasswordPage = ({ fetchPasswordPolicy, passwordPolicy }) => {
       username: search.get("username") || "",
     }));
 
-    fetchPasswordPolicy();
-  }, [dispatch, fetchPasswordPolicy]);
+  }, [dispatch]);
 
   const handlePasswordChange = (password) => {
     const { feedback, score } = validatePassword(password, effectivePasswordPolicy, formatMessage, formatMessageWithValues);
@@ -236,12 +235,4 @@ const mapStateToProps = (state) => ({
   passwordPolicy: state.core.passwordPolicy, // Adjust based on your state structure
 });
 
-const mapDispatchToProps = (dispatch) =>
-  bindActionCreators(
-    {
-      fetchPasswordPolicy,
-    },
-    dispatch,
-  );
-
-export default connect(mapStateToProps, mapDispatchToProps)(SetPasswordPage);
+export default connect(mapStateToProps)(SetPasswordPage);
