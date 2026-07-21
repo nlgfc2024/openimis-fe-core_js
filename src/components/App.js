@@ -172,7 +172,7 @@ const App = (props) => {
                   onLogout={onLogout}
                 />
               ) : null}
-              <PublishedComponent pubRef="grievanceSocialProtection.GrievanceConfigurationDialog" rights={rights} />
+
               <div className="App">
                 {auth.isAuthenticated && <Contributions contributionKey={APP_BOOT_CONTRIBUTION_KEY} />}
                 <BrowserRouter basename={basename}>
