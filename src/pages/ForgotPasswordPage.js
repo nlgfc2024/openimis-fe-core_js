@@ -30,7 +30,7 @@ const ForgotPasswordPage = (props) => {
   const { formatMessage } = useTranslations("core.ForgotPasswordPage", modulesManager);
   const [username, setUsername] = useState();
   const [isDone, setDone] = useState(false);
-  const { isLoading, mutate } = useGraphqlMutation(
+  const { isLoading, error, mutate } = useGraphqlMutation(
     `
     mutation resetPassword($input: ResetPasswordMutationInput!) {
       resetPassword(input: $input) {
@@ -47,8 +47,13 @@ const ForgotPasswordPage = (props) => {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    await mutate({ username });
-    await setDone(true);
+
+    try {
+      await mutate({ username: username.trim() });
+      setDone(true);
+    } catch (requestError) {
+      // The hook stores the error; leave the form visible for retry.
+    }
   };
 
   return (
@@ -79,6 +84,13 @@ const ForgotPasswordPage = (props) => {
                     />
                   </Grid>
                   <Grid item>
+                    {error && (
+                      <Grid item>
+                        <Typography color="error">
+                          {formatMessage("requestError")}
+                        </Typography>
+                      </Grid>
+                    )}
                     <Button
                       fullWidth
                       type="submit"

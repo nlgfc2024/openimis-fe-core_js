@@ -10,7 +10,7 @@ import { useGraphqlMutation } from "../helpers/hooks";
 import { connect } from "react-redux";
 import { bindActionCreators } from "redux";
 import { fetchPasswordPolicy } from "../actions";
-import { validatePassword } from '../helpers/passwordValidator';
+import { validatePassword } from "../helpers/passwordValidator";
 import { passwordGenerator } from "../helpers/passwordGenerator";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import VisibilityOffIcon from "@material-ui/icons/VisibilityOff";
@@ -39,7 +39,6 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-
 const SetPasswordPage = ({ fetchPasswordPolicy, passwordPolicy }) => {
   const classes = useStyles();
   const history = useHistory();
@@ -66,8 +65,14 @@ const SetPasswordPage = ({ fetchPasswordPolicy, passwordPolicy }) => {
   const IS_PASSWORD_SECURED = passwordScore >= 2;
 
   useEffect(() => {
-    const search = new URLSearchParams(location.search);
-    setCredentials({ token: search.get("token") });
+    const search = new URLSearchParams(window.location.search);
+
+    setCredentials((currentCredentials) => ({
+      ...currentCredentials,
+      token: search.get("token") || "",
+      username: search.get("username") || "",
+    }));
+
     fetchPasswordPolicy();
   }, [fetchPasswordPolicy]);
 
@@ -143,7 +148,13 @@ const SetPasswordPage = ({ fetchPasswordPolicy, passwordPolicy }) => {
                     type="text"
                     label={formatMessage("username.label")}
                     fullWidth
-                    onChange={(username) => setCredentials({ ...credentials, username })}
+                    value={credentials.username || ""}
+                    onChange={(username) =>
+                      setCredentials((currentCredentials) => ({
+                        ...currentCredentials,
+                        username,
+                      }))
+                    }
                   />
                 </Grid>
                 <Grid item>
