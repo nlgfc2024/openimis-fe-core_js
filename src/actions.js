@@ -335,14 +335,14 @@ export function fetch(config) {
           .replace(/['"]/g, "")
           .trim();
 
-          const csrfError = gqlErrors.some((e) => {
-            const msg = norm(e?.message);
+      const csrfError = gqlErrors.some((e) => {
+        const msg = norm(e?.message);
 
-            return (
-              msg === "csrftoken" ||
-              msg === "csrf token missing or incorrect."
-            );
-          });
+        return (
+          msg === "csrftoken" ||
+          msg === "csrf token missing or incorrect."
+        );
+      });
 
       const isAuthenticated = Boolean(getState()?.core?.user);
 
