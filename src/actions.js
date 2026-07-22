@@ -46,6 +46,10 @@ function getApiUrl() {
 
 export const baseApiUrl = getApiUrl();
 
+function hasJwtCookie() {
+  return typeof document !== "undefined" && document.cookie.split("; ").some((cookie) => cookie.startsWith("JWT="));
+}
+
 function getCsrfToken() {
   const CSRF_TOKEN_NAME = 'csrftoken';
   const CSRF_NOT_FOUND = null;
@@ -231,7 +235,7 @@ export function waitForMutation(clientMutationId) {
   };
 }
 
-export function graphqlMutation(mutation, variables, type = "CORE_TRIGGER_MUTATION", params = {}, wait = true, customHeaders = {}) {
+export function graphqlMutation(mutation, variables, type = "CORE_TRIGGER_MUTATION", params = {}, wait = true, customHeaders = {}, trackMutation = true) {
   let clientMutationId;
   if (variables?.input) {
     clientMutationId = uuid.uuid();
@@ -239,7 +243,7 @@ export function graphqlMutation(mutation, variables, type = "CORE_TRIGGER_MUTATI
   }
   return async (dispatch) => {
     const response = await dispatch(graphqlWithVariables(mutation, variables, type, params, customHeaders));
-    if (clientMutationId) {
+    if (clientMutationId && trackMutation) {
       dispatch(fetchMutation(clientMutationId));
       if (wait) {
         return dispatch(waitForMutation(clientMutationId));
@@ -394,37 +398,97 @@ export function login(credentials) {
       const mutation = `mutation authenticate($username: String!, $password: String!) {
             tokenAuth(username: $username, password: $password) {
               refreshExpiresIn
+              passwordExpired
+              passwordExpiryWarning
+              passwordExpiresInDays
+              passwordExpiresAt
+              resetEmailSent
+              username
             }
           }`;
 
       try {
+        const loginCsrfToken = getCsrfToken();
         const response = await dispatch(
           graphqlMutation(mutation, credentials, ["CORE_AUTH_LOGIN_REQ", "CORE_AUTH_LOGIN_RESP", "CORE_AUTH_ERR"], {}, false, {
-            "X-CSRFToken": csrfToken
+            "X-CSRFToken": loginCsrfToken
           }),
         );
-        if (response.payload?.errors?.length > 0) {
-          const errorMessage = response.payload.errors[0].message;
+        const responsePayload = response?.payload ?? response;
+        const responseData = responsePayload?.data ?? responsePayload;
+        const responseErrors = responsePayload?.errors ?? response?.errors;
+
+        if (responseErrors?.length > 0) {
+          const errorMessage = responseErrors[0].message;
+          if (errorMessage === "PASSWORD_EXPIRED") {
+            return {
+              loginStatus: "CORE_AUTH_PASSWORD_EXPIRED",
+              message: "PASSWORD_EXPIRED",
+              username: credentials.username,
+              resetEmailSent: false,
+            };
+          }
           dispatch(authError({ message: errorMessage }));
           return { loginStatus: "CORE_AUTH_ERR", message: errorMessage };
         }
 
-        const jwtToken = response.payload.data.tokenAuth.token;
-        const csrfResponse = await dispatch(fetchCsrfToken(jwtToken));
-        const csrfToken = csrfResponse?.payload?.data?.getCsrfToken?.csrfToken;
+        const authData = responseData?.tokenAuth;
+        if (authData?.passwordExpired || authData?.password_expired) {
+          return {
+            loginStatus: "CORE_AUTH_PASSWORD_EXPIRED",
+            message: "PASSWORD_EXPIRED",
+            username: authData.username || credentials.username,
+            resetEmailSent: authData.resetEmailSent || authData.reset_email_sent,
+          };
+        }
+
+        if (!authData?.refreshExpiresIn && !authData?.refresh_expires_in) {
+          return {
+            loginStatus: "CORE_AUTH_ERR",
+            message: "INCORRECT_CREDENTIALS",
+          };
+        }
+        
+        const csrfResponse = await dispatch(fetchCsrfToken());
+        const csrfResponsePayload = csrfResponse?.payload ?? csrfResponse;
+        const csrfResponseData = csrfResponsePayload?.data ?? csrfResponsePayload;
+        const csrfResponseErrors = csrfResponsePayload?.errors ?? csrfResponse?.errors;
+        if (csrfResponseErrors?.length > 0) {
+          const errorMessage = csrfResponseErrors[0].message;
+          dispatch(authError({ message: errorMessage }));
+          return { loginStatus: "CORE_AUTH_ERR", message: errorMessage };
+        }
+        const csrfToken = csrfResponseData?.getCsrfToken?.csrfToken;
+        if (!csrfToken) {
+          return { loginStatus: "CORE_AUTH_ERR", message: "GENERAL" };
+        }
         if (csrfToken) {
           localStorage.setItem('csrfToken', csrfToken);
         }
 
 
         const action = await dispatch(loadUser());
-        return { loginStatus: action.type, message: action?.payload?.response?.detail ?? "" };
+        return {
+          loginStatus: action.type,
+          message: action?.payload?.response?.detail ?? "",
+          passwordExpiryWarning: authData.passwordExpiryWarning || authData.password_expiry_warning,
+          passwordExpiresInDays: authData.passwordExpiresInDays ?? authData.password_expires_in_days,
+          passwordExpiresAt: authData.passwordExpiresAt || authData.password_expires_at,
+        };
       } catch (error) {
         dispatch(authError({ message: error.message }));
         return { loginStatus: "CORE_AUTH_ERR", message: error.message };
       }
     } else {
-      await dispatch(refreshAuthToken());
+      if (!hasJwtCookie()) {
+        return { loginStatus: "CORE_AUTH_NO_TOKEN", message: "" };
+      }
+      const refreshResponse = await dispatch(refreshAuthToken());
+      const refreshPayload = refreshResponse?.payload ?? refreshResponse;
+      const refreshErrors = refreshPayload?.errors ?? refreshResponse?.errors;
+      if (refreshErrors?.length > 0) {
+        return { loginStatus: "CORE_AUTH_NO_TOKEN", message: "" };
+      }
       const action = await dispatch(loadUser());
       return { loginStatus: action.type, message: action?.payload?.response?.detail ?? "Error occurred while loading user." };
     }
@@ -438,11 +502,10 @@ export function fetchCsrfToken(jwtToken) {
         csrfToken
       }
     }`;
+    const headers = jwtToken ? { "Authorization": `JWT ${jwtToken}` } : {};
 
     return dispatch(
-      graphqlMutation(csrfQuery, {}, ["CORE_AUTH_CSRTOKEN_REQ", "CORE_AUTH_CSRTOKEN_RESP", "CORE_AUTH_ERR"], {}, false, {
-        "Authorization": `JWT ${jwtToken}`,
-      }),
+      graphqlMutation(csrfQuery, {}, ["CORE_AUTH_CSRTOKEN_REQ", "CORE_AUTH_CSRTOKEN_RESP", "CORE_AUTH_ERR"], {}, false, headers),
     );
   };
 }

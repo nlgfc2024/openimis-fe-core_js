@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useHistory } from "../helpers/history";
+import { useDispatch } from "react-redux";
 import { makeStyles } from "@material-ui/styles";
 import { Button, Box, Grid, Paper, LinearProgress, Divider, Link, Typography } from "@material-ui/core";
 import TextInput from "../components/inputs/TextInput";
@@ -8,7 +9,7 @@ import { useModulesManager } from "../helpers/modules";
 import Helmet from "../helpers/Helmet";
 import { useAuthentication } from "../helpers/hooks";
 import Contributions from "./../components/generics/Contributions";
-import { baseApiUrl } from "../actions";
+import { baseApiUrl, clearConfirm, coreAlert } from "../actions";
 import { DEFAULT, SAML_LOGIN_PATH } from "../constants";
 import ArrowBackIcon from "@material-ui/icons/ArrowBack";
 
@@ -37,8 +38,9 @@ const LOGIN_PAGE_MPASS_CONTRIBUTION_KEY = "workerVoucher.MPassLoginButton";
 const LoginPage = ({ logo }) => {
   const classes = useStyles();
   const history = useHistory();
+  const dispatch = useDispatch();
   const modulesManager = useModulesManager();
-  const { formatMessage } = useTranslations("core.LoginPage", modulesManager);
+  const { formatMessage, formatMessageWithValues } = useTranslations("core.LoginPage", modulesManager);
   const [credentials, setCredentials] = useState({});
   const [serverResponse, setServerResponse] = useState({ loginStatus: "", message: null });
   const auth = useAuthentication();
@@ -49,6 +51,7 @@ const LoginPage = ({ logo }) => {
   const enablePublicPage = modulesManager.getConf("fe-core", "App.enablePublicPage", DEFAULT.ENABLE_PUBLIC_PAGE);
 
   useEffect(() => {
+    dispatch(clearConfirm(false));
     if (auth.isAuthenticated) {
       history.push("/");
     }
@@ -72,10 +75,28 @@ const LoginPage = ({ logo }) => {
   
       const { loginStatus, message } = response;
       setServerResponse({ loginStatus, message });
+
+      if (loginStatus === "CORE_AUTH_PASSWORD_EXPIRED") {
+        const alertMessage = response.resetEmailSent
+          ? formatMessage("passwordExpiredResetEmailSent")
+          : formatMessage("passwordExpiredResetRequired");
+        setServerResponse({ loginStatus, message: null });
+        dispatch(coreAlert(formatMessage("passwordExpired.title"), alertMessage));
+        setAuthenticating(false);
+        return;
+      }
   
       if (loginStatus === "CORE_AUTH_ERR") {
         setAuthenticating(false);
       } else {
+        if (response.passwordExpiryWarning) {
+          const alertMessage = response.passwordExpiresInDays === 0
+            ? formatMessage("passwordExpiryWarning.messageToday")
+            : formatMessageWithValues("passwordExpiryWarning.message", {
+                days: response.passwordExpiresInDays,
+              });
+          dispatch(coreAlert(formatMessage("passwordExpiryWarning.title"), alertMessage));
+        }
         history.push("/");
       }
     } catch (error) {
@@ -93,6 +114,8 @@ const LoginPage = ({ logo }) => {
     INCORRECT_CREDENTIALS: formatMessage("core.LoginPage.authError"),
     HF_CONTRACT_INVALID: formatMessage("core.LoginPage.authErrorHealthFacilityContractInvalid"),
     GENERAL: formatMessage("core.LoginPage.authErrorGeneral"),
+    PASSWORD_EXPIRED_RESET_EMAIL_SENT: formatMessage("passwordExpiredResetEmailSent"),
+    PASSWORD_EXPIRED_RESET_REQUIRED: formatMessage("passwordExpiredResetRequired"),
   };
 
   const getErrorMessage = (messageKey) => {
@@ -169,7 +192,8 @@ const LoginPage = ({ logo }) => {
                       <TextInput
                         required
                         readOnly={isAuthenticating}
-                        label={formatMessage("username.label")}
+                        module="core.LoginPage"
+                        label="username.label"
                         fullWidth
                         defaultValue={credentials.username}
                         onChange={(username) => setCredentials({ ...credentials, username })}
@@ -180,7 +204,8 @@ const LoginPage = ({ logo }) => {
                         required
                         readOnly={isAuthenticating}
                         type="password"
-                        label={formatMessage("password.label")}
+                        module="core.LoginPage"
+                        label="password.label"
                         fullWidth
                         onChange={(password) => setCredentials({ ...credentials, password })}
                       />

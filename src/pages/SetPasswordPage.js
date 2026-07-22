@@ -7,14 +7,21 @@ import { useModulesManager } from "../helpers/modules";
 import { useHistory } from "../helpers/history";
 import Helmet from "../helpers/Helmet";
 import { useGraphqlMutation } from "../helpers/hooks";
-import { connect } from "react-redux";
-import { bindActionCreators } from "redux";
-import { fetchPasswordPolicy } from "../actions";
+import { connect, useDispatch } from "react-redux";
+import { clearConfirm, fetchPasswordPolicy } from "../actions";
 import { validatePassword } from "../helpers/passwordValidator";
 import { passwordGenerator } from "../helpers/passwordGenerator";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import VisibilityOffIcon from "@material-ui/icons/VisibilityOff";
 import ClearIcon from "@material-ui/icons/Clear";
+
+const DEFAULT_PASSWORD_POLICY = JSON.stringify({
+  min_length: 8,
+  require_lower_case: 1,
+  require_upper_case: 1,
+  require_numbers: 1,
+  require_special_characters: 1,
+});
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -39,9 +46,10 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const SetPasswordPage = ({ fetchPasswordPolicy, passwordPolicy }) => {
+const SetPasswordPage = ({ passwordPolicy }) => {
   const classes = useStyles();
   const history = useHistory();
+  const dispatch = useDispatch();
   const modulesManager = useModulesManager();
   const { formatMessage, formatMessageWithValues } = useTranslations("core.SetPasswordPage", modulesManager);
   const [credentials, setCredentials] = useState({});
@@ -57,14 +65,17 @@ const SetPasswordPage = ({ fetchPasswordPolicy, passwordPolicy }) => {
         }
       }
     `,
-    { wait: false },
+    { wait: false, trackMutation: false },
   );
 
   const [passwordFeedback, setPasswordFeedback] = useState("");
   const [passwordScore, setPasswordScore] = useState(0);
   const IS_PASSWORD_SECURED = passwordScore >= 2;
+  const effectivePasswordPolicy = passwordPolicy || DEFAULT_PASSWORD_POLICY;
 
   useEffect(() => {
+    dispatch(clearConfirm(false));
+    dispatch(fetchPasswordPolicy());
     const search = new URLSearchParams(window.location.search);
 
     setCredentials((currentCredentials) => ({
@@ -73,11 +84,10 @@ const SetPasswordPage = ({ fetchPasswordPolicy, passwordPolicy }) => {
       username: search.get("username") || "",
     }));
 
-    fetchPasswordPolicy();
-  }, [fetchPasswordPolicy]);
+  }, [dispatch]);
 
   const handlePasswordChange = (password) => {
-    const { feedback, score } = validatePassword(password, passwordPolicy, formatMessage, formatMessageWithValues);
+    const { feedback, score } = validatePassword(password, effectivePasswordPolicy, formatMessage, formatMessageWithValues);
     setPasswordFeedback(feedback);
     setPasswordScore(score);
     setCredentials({ ...credentials, password });
@@ -116,10 +126,11 @@ const SetPasswordPage = ({ fetchPasswordPolicy, passwordPolicy }) => {
         token: credentials.token,
         newPassword: credentials.password,
       });
-      if (result?.setPassword.success) {
+      const setPasswordResult = result?.setPassword || result?.payload?.data?.setPassword;
+      if (setPasswordResult?.success) {
         history.push("/");
       } else {
-        handleSetPasswordError(result?.setPassword.error || formatMessage("error"));
+        handleSetPasswordError(setPasswordResult?.error || formatMessage("error"));
       }
     }
   };
@@ -161,7 +172,8 @@ const SetPasswordPage = ({ fetchPasswordPolicy, passwordPolicy }) => {
                   <TextInput
                     required
                     type={showPassword ? "text" : "password"}
-                    label={formatMessage("password.label")}
+                    module="core.SetPasswordPage"
+                    label="password.label"
                     fullWidth
                     onChange={(password) => handlePasswordChange(password)}
                     value={credentials.password || ""}
@@ -181,7 +193,8 @@ const SetPasswordPage = ({ fetchPasswordPolicy, passwordPolicy }) => {
                   <TextInput
                     required
                     type={showPassword ? "text" : "password"}
-                    label={formatMessage("confirmPassword.label")}
+                    module="core.SetPasswordPage"
+                    label="confirmPassword.label"
                     fullWidth
                     onChange={(confirmPassword) => setCredentials({ ...credentials, confirmPassword })}
                     value={credentials.confirmPassword || ""}
@@ -222,12 +235,4 @@ const mapStateToProps = (state) => ({
   passwordPolicy: state.core.passwordPolicy, // Adjust based on your state structure
 });
 
-const mapDispatchToProps = (dispatch) =>
-  bindActionCreators(
-    {
-      fetchPasswordPolicy,
-    },
-    dispatch,
-  );
-
-export default connect(mapStateToProps, mapDispatchToProps)(SetPasswordPage);
+export default connect(mapStateToProps)(SetPasswordPage);
