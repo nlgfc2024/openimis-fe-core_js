@@ -52,7 +52,7 @@ function getCsrfToken() {
 
   const cookies = document.cookie;
   const cookieArray = cookies.split('; ');
-  
+
   const csrfCookie = cookieArray.find(cookie => cookie.startsWith(CSRF_TOKEN_NAME));
   return csrfCookie?.split('=')[1] ?? CSRF_NOT_FOUND;
 }
@@ -256,7 +256,7 @@ import * as Sentry from "@sentry/react";
 export function fetch(config) {
   const csrfToken = localStorage.getItem("csrfToken");
 
-  return async (dispatch) => {
+  return async (dispatch, getState) => {
     let action;
 
     try {
@@ -329,15 +329,24 @@ export function fetch(config) {
         });
       }
 
-      const norm = (m) => String(m || "").toLowerCase().replace(/['"]/g, "").trim();
+      const norm = (m) =>
+        String(m || "")
+          .toLowerCase()
+          .replace(/['"]/g, "")
+          .trim();
+
       const csrfError = gqlErrors.some((e) => {
         const msg = norm(e?.message);
-        return msg === "csrftoken" 
-        || msg === "user not authorized for this operation" 
-        || msg === "unauthorized";
+
+        return (
+          msg === "csrftoken" ||
+          msg === "csrf token missing or incorrect."
+        );
       });
 
-      if (csrfError) {
+      const isAuthenticated = Boolean(getState()?.core?.user);
+
+      if (csrfError && isAuthenticated) {
         dispatch(
           coreConfirm(
             "Session Expired",
@@ -399,7 +408,7 @@ export function login(credentials) {
           dispatch(authError({ message: errorMessage }));
           return { loginStatus: "CORE_AUTH_ERR", message: errorMessage };
         }
-        
+
         const jwtToken = response.payload.data.tokenAuth.token;
         const csrfResponse = await dispatch(fetchCsrfToken(jwtToken));
         const csrfToken = csrfResponse?.payload?.data?.getCsrfToken?.csrfToken;
