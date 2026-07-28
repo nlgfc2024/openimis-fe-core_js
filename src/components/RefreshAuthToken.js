@@ -11,7 +11,7 @@ const RefreshAuthToken = () => {
     }
 
     return () => {
-      clearTimeout(intervalRef.current);
+      clearInterval(intervalRef.current);
     };
   }, [auth.isAuthenticated]);
 

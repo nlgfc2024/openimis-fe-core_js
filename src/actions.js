@@ -46,10 +46,6 @@ function getApiUrl() {
 
 export const baseApiUrl = getApiUrl();
 
-function hasJwtCookie() {
-  return typeof document !== "undefined" && document.cookie.split("; ").some((cookie) => cookie.startsWith("JWT="));
-}
-
 function getCsrfToken() {
   const CSRF_TOKEN_NAME = 'csrftoken';
   const CSRF_NOT_FOUND = null;
@@ -480,9 +476,6 @@ export function login(credentials) {
         return { loginStatus: "CORE_AUTH_ERR", message: error.message };
       }
     } else {
-      if (!hasJwtCookie()) {
-        return { loginStatus: "CORE_AUTH_NO_TOKEN", message: "" };
-      }
       const refreshResponse = await dispatch(refreshAuthToken());
       const refreshPayload = refreshResponse?.payload ?? refreshResponse;
       const refreshErrors = refreshPayload?.errors ?? refreshResponse?.errors;
