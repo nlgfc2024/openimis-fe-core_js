@@ -35,7 +35,7 @@ export const TRANSLATION_CONTRIBUTION_KEY = "translations";
 export const ECONOMIC_UNIT_DIALOG_CONTRIBUTION_KEY = "policyholder.EconomicUnitDialog";
 const ECONOMIC_UNIT_STORAGE_KEY = "userEconomicUnit";
 export const CORE_APP_NAME_MESSAGE_ID = "core.appName";
-export const ROOT_APP_NAME_MESSAGE_ID = "root.appName";
+export const APP_NAME_MESSAGE_ID = "appName";
 export const DEFAULT_APP_NAME = "openIMIS";
 const PUBLIC_PAGE_LANGUAGE_STORAGE_KEY = "publicPageLanguage";
 
@@ -104,11 +104,14 @@ const App = (props) => {
   }, [user?.language, messages]);
 
   // Keep the browser tab title in step with the app name shown in the header.
-  // The header renders <FormattedMessage module="core" id="appName" /> with a
-  // `root.appName` fallback, so resolve the same keys here. The Helmet sits
+  // The header renders <FormattedMessage module="core" id="appName" />, and our
+  // FormattedMessage wrapper falls back to the *bare* id when `<module>.<id>` is
+  // absent -- which is the path actually taken, because the name is defined as a
+  // bare `appName` key in the frontend hub's translations (passed to App as the
+  // `messages` prop). Mirror that same resolution order here. The Helmet sits
   // outside IntlProvider, hence the direct lookup in `allMessages`.
   const appName = useMemo(
-    () => allMessages[CORE_APP_NAME_MESSAGE_ID] ?? allMessages[ROOT_APP_NAME_MESSAGE_ID] ?? DEFAULT_APP_NAME,
+    () => allMessages[CORE_APP_NAME_MESSAGE_ID] ?? allMessages[APP_NAME_MESSAGE_ID] ?? DEFAULT_APP_NAME,
     [allMessages],
   );
 
