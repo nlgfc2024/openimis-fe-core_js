@@ -34,6 +34,9 @@ export const APP_BOOT_CONTRIBUTION_KEY = "core.Boot";
 export const TRANSLATION_CONTRIBUTION_KEY = "translations";
 export const ECONOMIC_UNIT_DIALOG_CONTRIBUTION_KEY = "policyholder.EconomicUnitDialog";
 const ECONOMIC_UNIT_STORAGE_KEY = "userEconomicUnit";
+export const CORE_APP_NAME_MESSAGE_ID = "core.appName";
+export const ROOT_APP_NAME_MESSAGE_ID = "root.appName";
+export const DEFAULT_APP_NAME = "openIMIS";
 const PUBLIC_PAGE_LANGUAGE_STORAGE_KEY = "publicPageLanguage";
 
 const styles = () => ({
@@ -100,6 +103,15 @@ const App = (props) => {
     return { ...messages, ...msgs };
   }, [user?.language, messages]);
 
+  // Keep the browser tab title in step with the app name shown in the header.
+  // The header renders <FormattedMessage module="core" id="appName" /> with a
+  // `root.appName` fallback, so resolve the same keys here. The Helmet sits
+  // outside IntlProvider, hence the direct lookup in `allMessages`.
+  const appName = useMemo(
+    () => allMessages[CORE_APP_NAME_MESSAGE_ID] ?? allMessages[ROOT_APP_NAME_MESSAGE_ID] ?? DEFAULT_APP_NAME,
+    [allMessages],
+  );
+
   useEffect(() => {
     auth.initialize();
     if (process.env.NODE_ENV == "development") {
@@ -156,7 +168,7 @@ const App = (props) => {
   if (!auth.isInitialized) return null;
   return (
     <>
-      <Helmet titleTemplate="%s - openIMIS" defaultTitle="openIMIS" />
+      <Helmet titleTemplate={`%s - ${appName}`} defaultTitle={appName} />
       <CssBaseline />
       <ModulesManagerProvider value={modulesManager}>
         <PublicPageLanguageProvider>
