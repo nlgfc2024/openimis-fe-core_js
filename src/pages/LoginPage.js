@@ -12,6 +12,7 @@ import Contributions from "./../components/generics/Contributions";
 import { baseApiUrl, clearConfirm, coreAlert } from "../actions";
 import { DEFAULT, SAML_LOGIN_PATH } from "../constants";
 import ArrowBackIcon from "@material-ui/icons/ArrowBack";
+import { configuredAppName } from "../helpers/appName";
 
 const useStyles = makeStyles((theme) => ({
   container: {
@@ -158,7 +159,7 @@ const LoginPage = ({ logo }) => {
                   <img className={classes.logo} src={logo} />
                   {!isWorker && (
                     <Box pl={2} fontWeight="fontWeightMedium" fontSize="h4.fontSize">
-                      {formatMessage("appName")}
+                      {configuredAppName(modulesManager) ?? formatMessage("appName")}
                     </Box>
                   )}
                 </Grid>
