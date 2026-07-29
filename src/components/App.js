@@ -27,6 +27,7 @@ import PublicPageMiddleware from "./PublicPageMiddleware";
 import { ToastProvider } from "../helpers/ToastContext";
 import { PublicPageLanguageProvider } from "../helpers/PublicPageLanguageContext";
 import { getCookie } from "../helpers/cookies";
+import { resolveAppName } from "../helpers/appName";
 
 export const ROUTER_CONTRIBUTION_KEY = "core.Router";
 export const UNAUTHENTICATED_ROUTER_CONTRIBUTION_KEY = "core.UnauthenticatedRouter";
@@ -34,9 +35,6 @@ export const APP_BOOT_CONTRIBUTION_KEY = "core.Boot";
 export const TRANSLATION_CONTRIBUTION_KEY = "translations";
 export const ECONOMIC_UNIT_DIALOG_CONTRIBUTION_KEY = "policyholder.EconomicUnitDialog";
 const ECONOMIC_UNIT_STORAGE_KEY = "userEconomicUnit";
-export const CORE_APP_NAME_MESSAGE_ID = "core.appName";
-export const APP_NAME_MESSAGE_ID = "appName";
-export const DEFAULT_APP_NAME = "openIMIS";
 const PUBLIC_PAGE_LANGUAGE_STORAGE_KEY = "publicPageLanguage";
 
 const styles = () => ({
@@ -103,16 +101,13 @@ const App = (props) => {
     return { ...messages, ...msgs };
   }, [user?.language, messages]);
 
-  // Keep the browser tab title in step with the app name shown in the header.
-  // The header renders <FormattedMessage module="core" id="appName" />, and our
-  // FormattedMessage wrapper falls back to the *bare* id when `<module>.<id>` is
-  // absent -- which is the path actually taken, because the name is defined as a
-  // bare `appName` key in the frontend hub's translations (passed to App as the
-  // `messages` prop). Mirror that same resolution order here. The Helmet sits
-  // outside IntlProvider, hence the direct lookup in `allMessages`.
+  // Keep the browser tab title in step with the app name shown in the header:
+  // the backend fe-core ModuleConfiguration first, then the translations.
+  // The Helmet sits outside IntlProvider, hence resolving from `allMessages`
+  // rather than via FormattedMessage.
   const appName = useMemo(
-    () => allMessages[CORE_APP_NAME_MESSAGE_ID] ?? allMessages[APP_NAME_MESSAGE_ID] ?? DEFAULT_APP_NAME,
-    [allMessages],
+    () => resolveAppName(modulesManager, allMessages),
+    [modulesManager, allMessages],
   );
 
   useEffect(() => {

@@ -29,6 +29,7 @@ import FormControlLabel from '@material-ui/core/FormControlLabel';
 import { Switch } from "@material-ui/core";
 import { useTranslations } from "../helpers/i18n";
 import { DEFAULT } from "../constants";
+import { configuredAppName } from "../helpers/appName";
 
 
 export const APP_BAR_CONTRIBUTION_KEY = "core.AppBar";
@@ -229,6 +230,12 @@ const RequireAuth = (props) => {
   );
   const isWorker = modulesManager.getConf("fe-core", "isWorker", DEFAULT.IS_WORKER);
   const showJournalSidebar = modulesManager.getConf("fe-core", "showJournalSidebar", DEFAULT.SHOW_JOURNAL_SIDEBAR);
+  // `appName` from the backend ModuleConfiguration wins; otherwise keep the
+  // existing translation-driven label.
+  const appNameFromConfig = configuredAppName(modulesManager);
+  const appNameLabel = appNameFromConfig ?? (
+    <FormattedMessage module="core" id="appName" defaultMessage={<FormattedMessage id="root.appName" />} />
+  );
 
   const isAppBarMenu = useMemo(() => theme.menu.variant.toUpperCase() === "APPBAR", [theme.menu.variant]);
 
@@ -262,9 +269,7 @@ const RequireAuth = (props) => {
                 <img className={classes.logo} src={logo} alt="Logo of openIMIS" />
               </Hidden>
             )}
-            {!disableTextLogo && (
-              <FormattedMessage module="core" id="appName" defaultMessage={<FormattedMessage id="root.appName" />} />
-            )}
+            {!disableTextLogo && appNameLabel}
             <Hidden smDown implementation="css">
             <Tooltip title={modulesManager.getModulesVersions().join(", ")}>
               <Typography variant="caption" className={classes.appVersions}>
@@ -312,9 +317,7 @@ const RequireAuth = (props) => {
                 <img className={classes.logo} src={logo} alt="Logo of openIMIS" />
               </Hidden>
             )}
-            {!disableTextLogo && (
-              <FormattedMessage module="core" id="appName" defaultMessage={<FormattedMessage id="root.appName" />} />
-            )}
+            {!disableTextLogo && appNameLabel}
           </Button>
           <Hidden smDown implementation="css">
             <Tooltip title={modulesManager.getModulesVersions().join(", ")}>
