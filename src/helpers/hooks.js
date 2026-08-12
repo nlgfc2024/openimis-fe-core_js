@@ -9,6 +9,7 @@ import {
   graphqlWithVariables,
   graphqlMutation,
 } from "../actions";
+import { formatGQLString } from "./api";
 
 export const useDebounceCb = (cb, duration = 0) => {
   const [payload, setPayload] = useState();
@@ -239,7 +240,9 @@ export const ASYNC_JOB_TERMINAL_STATUSES = ["SUCCESS", "PARTIAL", "FAILED", "CAN
 export const useAsyncJob = ({ uuid, clientMutationId }) => {
   const modulesManager = useModulesManager();
   const pollInterval = modulesManager.getRef("core.AsyncJobProgress.pollInterval") ?? 3000;
-  const filter = uuid ? `id: "${uuid}"` : `clientMutationId: "${clientMutationId}"`;
+  const filter = uuid
+    ? `id: "${formatGQLString(uuid)}"`
+    : `clientMutationId: "${formatGQLString(clientMutationId)}"`;
   const { data, isLoading, error, refetch } = useGraphqlQuery(
     `{
       asyncJobs(${filter}, first: 1, orderBy: ["-created_at"]) {
@@ -266,9 +269,15 @@ export const useAsyncJob = ({ uuid, clientMutationId }) => {
   }, [node]);
   const isTerminal = !!job && ASYNC_JOB_TERMINAL_STATUSES.includes(job.status);
 
+  // refetch is a new closure every render (useGraphqlQuery doesn't memoize
+  // it), so it's read from a ref rather than a dep - a dep would tear down
+  // and recreate the interval on every render instead of just polling.
+  const refetchRef = useRef(refetch);
+  refetchRef.current = refetch;
+
   useEffect(() => {
     if (isTerminal || (!uuid && !clientMutationId)) return undefined;
-    const interval = setInterval(refetch, pollInterval);
+    const interval = setInterval(() => refetchRef.current(), pollInterval);
     return () => clearInterval(interval);
   }, [isTerminal, pollInterval, uuid, clientMutationId]);
 
