@@ -269,9 +269,7 @@ export const useAsyncJob = ({ uuid, clientMutationId }) => {
   }, [node]);
   const isTerminal = !!job && ASYNC_JOB_TERMINAL_STATUSES.includes(job.status);
 
-  // refetch is a new closure every render (useGraphqlQuery doesn't memoize
-  // it), so it's read from a ref rather than a dep - a dep would tear down
-  // and recreate the interval on every render instead of just polling.
+  // refetch isn't memoized by useGraphqlQuery, so read the latest via a ref
   const refetchRef = useRef(refetch);
   refetchRef.current = refetch;
 
