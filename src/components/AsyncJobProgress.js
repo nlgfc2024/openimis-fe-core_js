@@ -1,7 +1,9 @@
-import React from "react";
-import { Grid, LinearProgress, Typography, Chip } from "@material-ui/core";
+import React, { useState } from "react";
+import { useDispatch } from "react-redux";
+import { Button, Grid, LinearProgress, Typography, Chip } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 
+import { cancelAsyncJob } from "../actions";
 import { useAsyncJob } from "../helpers/hooks";
 import { useModulesManager } from "../helpers/modules";
 import { useTranslations } from "../helpers/i18n";
@@ -19,9 +21,18 @@ const RUNNING_STATUSES = ["RECEIVED", "QUEUED", "RUNNING"];
 
 const AsyncJobProgress = ({ uuid, clientMutationId }) => {
   const classes = useStyles();
+  const dispatch = useDispatch();
   const modulesManager = useModulesManager();
   const { formatMessage, formatMessageWithValues } = useTranslations("core", modulesManager);
-  const { job, error, isTerminal } = useAsyncJob({ uuid, clientMutationId });
+  const { job, error, isTerminal, refetch } = useAsyncJob({ uuid, clientMutationId });
+  const [cancelling, setCancelling] = useState(false);
+
+  const onCancel = async () => {
+    setCancelling(true);
+    await dispatch(cancelAsyncJob(job.uuid));
+    await refetch();
+    setCancelling(false);
+  };
 
   if (error) return <Error error={formatServerError(error)} />;
   if (!job) {
@@ -60,6 +71,13 @@ const AsyncJobProgress = ({ uuid, clientMutationId }) => {
           <Typography variant="body2" className={classes.metrics}>
             {metrics.map(([name, value]) => `${name}: ${value}`).join(" · ")}
           </Typography>
+        </Grid>
+      )}
+      {running && (
+        <Grid item>
+          <Button size="small" variant="outlined" onClick={onCancel} disabled={cancelling}>
+            {formatMessage("asyncJob.cancel")}
+          </Button>
         </Grid>
       )}
       <Grid item xs={12}>

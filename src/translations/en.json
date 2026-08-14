@@ -8,6 +8,7 @@
   "core.asyncJob.status.PARTIAL": "Completed with failures",
   "core.asyncJob.status.FAILED": "Failed",
   "core.asyncJob.status.CANCELLED": "Cancelled",
+  "core.asyncJob.cancel": "Cancel",
   "core.pickerNoOptionsLabel": "No options available",
   "core.roleManagement.label": "Roles Management",
   "core.roleManagement.searcher.results.title": "{rolesTotalCount} Roles Found",
