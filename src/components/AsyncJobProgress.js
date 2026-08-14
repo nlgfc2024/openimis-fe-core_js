@@ -19,7 +19,7 @@ const useStyles = makeStyles((theme) => ({
 
 const RUNNING_STATUSES = ["RECEIVED", "QUEUED", "RUNNING"];
 
-const AsyncJobProgress = ({ uuid, clientMutationId }) => {
+const AsyncJobProgress = ({ uuid, clientMutationId, actions }) => {
   const classes = useStyles();
   const dispatch = useDispatch();
   const modulesManager = useModulesManager();
@@ -78,6 +78,11 @@ const AsyncJobProgress = ({ uuid, clientMutationId }) => {
           <Button size="small" variant="outlined" onClick={onCancel} disabled={cancelling}>
             {formatMessage("asyncJob.cancel")}
           </Button>
+        </Grid>
+      )}
+      {!!actions && (
+        <Grid item style={{ marginLeft: "auto" }}>
+          {actions}
         </Grid>
       )}
       <Grid item xs={12}>
