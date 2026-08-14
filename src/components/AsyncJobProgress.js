@@ -15,6 +15,18 @@ const useStyles = makeStyles((theme) => ({
   bar: { marginTop: theme.spacing(1), marginBottom: theme.spacing(1) },
   error: { color: theme.palette.error.main },
   metrics: { color: theme.palette.text.secondary },
+  progressGroup: {
+    display: "flex",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: theme.spacing(2),
+  },
+  actionsGroup: {
+    display: "flex",
+    alignItems: "center",
+    gap: theme.spacing(1),
+    marginLeft: "auto",
+  },
 }));
 
 const RUNNING_STATUSES = ["RECEIVED", "QUEUED", "RUNNING"];
@@ -52,11 +64,9 @@ const AsyncJobProgress = ({ uuid, clientMutationId, actions }) => {
 
   return (
     <Grid container className={classes.container} spacing={1} alignItems="center">
-      <Grid item>
+      <Grid item className={classes.progressGroup}>
         <Chip size="small" label={formatMessage(`asyncJob.status.${job.status}`)} />
-      </Grid>
-      {percent !== null && (
-        <Grid item>
+        {percent !== null && (
           <Typography variant="body2">
             {formatMessageWithValues("asyncJob.progress", {
               processed: job.processed,
@@ -64,24 +74,20 @@ const AsyncJobProgress = ({ uuid, clientMutationId, actions }) => {
               percent,
             })}
           </Typography>
-        </Grid>
-      )}
-      {metrics.length > 0 && (
-        <Grid item>
+        )}
+        {metrics.length > 0 && (
           <Typography variant="body2" className={classes.metrics}>
             {metrics.map(([name, value]) => `${name}: ${value}`).join(" · ")}
           </Typography>
-        </Grid>
-      )}
-      {running && (
-        <Grid item>
-          <Button size="small" variant="outlined" onClick={onCancel} disabled={cancelling}>
-            {formatMessage("asyncJob.cancel")}
-          </Button>
-        </Grid>
-      )}
-      {!!actions && (
-        <Grid item style={{ marginLeft: "auto" }}>
+        )}
+      </Grid>
+      {(running || !!actions) && (
+        <Grid item className={classes.actionsGroup}>
+          {running && (
+            <Button size="small" variant="outlined" onClick={onCancel} disabled={cancelling}>
+              {formatMessage("asyncJob.cancel")}
+            </Button>
+          )}
           {actions}
         </Grid>
       )}
