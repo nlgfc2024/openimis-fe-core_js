@@ -760,3 +760,17 @@ export function changeUserLanguage(language, clientMutationLabel) {
     requestedDateTime,
   });
 }
+
+const CANCEL_ASYNC_JOB_MUTATION = `
+  mutation cancelAsyncJob($input: CancelAsyncJobMutationInput!) {
+    cancelAsyncJob(input: $input) {
+      clientMutationId
+      internalId
+    }
+  }
+`;
+
+// Cooperative: the job stops at its next progress checkpoint, not instantly.
+export function cancelAsyncJob(uuid) {
+  return graphqlWithVariables(CANCEL_ASYNC_JOB_MUTATION, { input: { id: uuid } }, "CORE_CANCEL_ASYNC_JOB");
+}

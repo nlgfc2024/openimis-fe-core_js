@@ -1,5 +1,5 @@
 import { useModulesManager } from "@openimis/fe-core";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   refreshAuthToken,
@@ -9,6 +9,7 @@ import {
   graphqlWithVariables,
   graphqlMutation,
 } from "../actions";
+import { formatGQLString } from "./api";
 
 export const useDebounceCb = (cb, duration = 0) => {
   const [payload, setPayload] = useState();
@@ -232,4 +233,51 @@ export const useBoolean = (defaultValue = false) => {
   const off = useCallback(() => setBool(false), []);
 
   return [bool, { toggle, on, off }];
+};
+
+export const ASYNC_JOB_TERMINAL_STATUSES = ["SUCCESS", "PARTIAL", "FAILED", "CANCELLED"];
+
+export const useAsyncJob = ({ uuid, clientMutationId }) => {
+  const modulesManager = useModulesManager();
+  const pollInterval = modulesManager.getRef("core.AsyncJobProgress.pollInterval") ?? 3000;
+  const filter = uuid
+    ? `id: "${formatGQLString(uuid)}"`
+    : `clientMutationId: "${formatGQLString(clientMutationId)}"`;
+  const { data, isLoading, error, refetch } = useGraphqlQuery(
+    `{
+      asyncJobs(${filter}, first: 1, orderBy: ["-created_at"]) {
+        edges {
+          node { uuid module jobType status total processed metrics message error clientMutationId }
+        }
+      }
+    }`,
+    {},
+    { skip: !uuid && !clientMutationId, keepStale: true },
+  );
+  const node = data?.asyncJobs?.edges?.[0]?.node;
+  const job = useMemo(() => {
+    if (!node) return null;
+    let metrics = node.metrics;
+    if (typeof metrics === "string") {
+      try {
+        metrics = JSON.parse(metrics);
+      } catch (e) {
+        metrics = {};
+      }
+    }
+    return { ...node, metrics };
+  }, [node]);
+  const isTerminal = !!job && ASYNC_JOB_TERMINAL_STATUSES.includes(job.status);
+
+  // refetch isn't memoized by useGraphqlQuery, so read the latest via a ref
+  const refetchRef = useRef(refetch);
+  refetchRef.current = refetch;
+
+  useEffect(() => {
+    if (isTerminal || (!uuid && !clientMutationId)) return undefined;
+    const interval = setInterval(() => refetchRef.current(), pollInterval);
+    return () => clearInterval(interval);
+  }, [isTerminal, pollInterval, uuid, clientMutationId]);
+
+  return { job, isLoading, error, refetch, isTerminal };
 };
