@@ -27,6 +27,7 @@ import PublicPageMiddleware from "./PublicPageMiddleware";
 import { ToastProvider } from "../helpers/ToastContext";
 import { PublicPageLanguageProvider } from "../helpers/PublicPageLanguageContext";
 import { getCookie } from "../helpers/cookies";
+import { resolveAppName } from "../helpers/appName";
 
 export const ROUTER_CONTRIBUTION_KEY = "core.Router";
 export const UNAUTHENTICATED_ROUTER_CONTRIBUTION_KEY = "core.UnauthenticatedRouter";
@@ -100,6 +101,15 @@ const App = (props) => {
     return { ...messages, ...msgs };
   }, [user?.language, messages]);
 
+  // Keep the browser tab title in step with the app name shown in the header:
+  // the backend fe-core ModuleConfiguration first, then the translations.
+  // The Helmet sits outside IntlProvider, hence resolving from `allMessages`
+  // rather than via FormattedMessage.
+  const appName = useMemo(
+    () => resolveAppName(modulesManager, allMessages),
+    [modulesManager, allMessages],
+  );
+
   useEffect(() => {
     auth.initialize();
     if (process.env.NODE_ENV == "development") {
@@ -156,7 +166,7 @@ const App = (props) => {
   if (!auth.isInitialized) return null;
   return (
     <>
-      <Helmet titleTemplate="%s - openIMIS" defaultTitle="openIMIS" />
+      <Helmet titleTemplate={`%s - ${appName}`} defaultTitle={appName} />
       <CssBaseline />
       <ModulesManagerProvider value={modulesManager}>
         <PublicPageLanguageProvider>

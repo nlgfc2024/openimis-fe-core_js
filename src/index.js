@@ -111,7 +111,10 @@ import {
   useGraphqlMutation,
   useAuthentication,
   useUserQuery,
+  useAsyncJob,
+  ASYNC_JOB_TERMINAL_STATUSES,
 } from "./helpers/hooks";
+import AsyncJobProgress from "./components/AsyncJobProgress";
 import withHistory, {
   historyPush,
   useLocation,
@@ -184,6 +187,8 @@ const DEFAULT_CONFIG = {
   "refs": [
     { key: "core.JournalDrawer.pollInterval", ref: 2000 },
     { key: "core.KeepLegacyAlive.pollInterval", ref: 300000 },
+    { key: "core.AsyncJobProgress", ref: AsyncJobProgress },
+    { key: "core.AsyncJobProgress.pollInterval", ref: 3000 },
     { key: "core.YearPicker", ref: YearPicker },
     { key: "core.MonthPicker", ref: MonthPicker },
     { key: "core.LanguagePicker", ref: LanguagePicker },
@@ -306,6 +311,9 @@ export {
   NumberInput,
   MainMenuContribution,
   ProgressOrError,
+  AsyncJobProgress,
+  useAsyncJob,
+  ASYNC_JOB_TERMINAL_STATUSES,
   ProxyPage,
   PublishedComponent,
   Table,
