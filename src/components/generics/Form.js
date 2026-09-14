@@ -1,7 +1,7 @@
 import React, { Component, Fragment } from "react";
 import { withTheme, withStyles } from "@material-ui/core/styles";
 import { injectIntl } from "react-intl";
-import { Fab, Grid, Paper, IconButton, Typography, Divider, Tooltip } from "@material-ui/core";
+import { Button, Fab, Grid, Paper, IconButton, Typography, Divider, Tooltip } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
 import SaveIcon from "@material-ui/icons/Save";
 import ChevronLeftIcon from "@material-ui/icons/ChevronLeft";
@@ -15,6 +15,7 @@ const styles = (theme) => ({
   paper: theme.paper.paper,
   paperHeader: theme.paper.header,
   paperHeaderAction: theme.paper.action,
+  item: theme.paper.item,
   tooltipContainer: theme.tooltipContainer,
   flexTooltip: theme.flexTooltip,
 });
@@ -52,6 +53,8 @@ class Form extends Component {
   render() {
     const {
       enableSaveButton = true,
+      saveButtonVariant = "inline",
+      saveButtonLabel = null,
       classes,
       module,
       back,
@@ -75,6 +78,16 @@ class Form extends Component {
       enableActionButtons = false,
       ...others
     } = this.props;
+    const readOnly = !!this.props.readOnly;
+    const showInlineSaveButton =
+      enableSaveButton &&
+      saveButtonVariant === "inline" &&
+      !!save &&
+      !readOnly &&
+      (!!this.state.dirty || !!openDirty);
+    const inlineSaveLabel = saveButtonLabel
+      ? formatMessage(this.props.intl, module, saveButtonLabel)
+      : saveTooltip || formatMessage(this.props.intl, module, "saveTooltip");
 
     const defaultTooltips = [
       {
@@ -92,7 +105,7 @@ class Form extends Component {
         condition: (!!this.state.dirty || !!openDirty) && !!save,
         content: (
           <span>
-            {enableSaveButton && (
+            {enableSaveButton && saveButtonVariant === "fab" && (
               <Fab
                 color="primary"
                 disabled={!!this.state.saving || (!!canSave && !canSave())}
@@ -188,6 +201,22 @@ class Form extends Component {
                     {!!headPanelContributionsKey && (
                       <Contributions {...others} contributionKey={headPanelContributionsKey} />
                     )}
+                  </Grid>
+                )}
+                {showInlineSaveButton && (
+                  <Grid item xs={12}>
+                    <Grid container className={classes.item}>
+                      <Grid item xs={12} className={classes.item}>
+                        <Button
+                          color="primary"
+                          variant="contained"
+                          disabled={!!this.state.saving || (!!canSave && !canSave())}
+                          onClick={(e) => this.save(this.props.edited)}
+                        >
+                          {inlineSaveLabel}
+                        </Button>
+                      </Grid>
+                    </Grid>
                   </Grid>
                 )}
               </Paper>
