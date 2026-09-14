@@ -463,8 +463,8 @@ class Searcher extends Component {
             key={action.label}
             onClick={action.onClick}
             startIcon={action.icon}
-            variant="contained"
-            color="primary"
+            variant={action.variant ?? "contained"}
+            color={action.color ?? "primary"}
             className={classes.actionButton}
           >
             <Typography variant="body2">{action.label}</Typography>
