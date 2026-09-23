@@ -7,6 +7,7 @@ import Autocomplete from "./components/inputs/Autocomplete";
 import Contributions from "./components/generics/Contributions";
 import Block from "./components/generics/Block";
 import ControlledField from "./components/generics/ControlledField";
+import DynamicFilterField from "./components/generics/DynamicFilterField";
 import Error from "./components/generics/Error";
 import FatalError from "./components/generics/FatalError";
 import AlertForwarder from "./components/generics/AlertForwarder";
@@ -288,6 +289,7 @@ export {
   Block,
   Contributions,
   ControlledField,
+  DynamicFilterField,
   Picker,
   Error,
   FatalError,
