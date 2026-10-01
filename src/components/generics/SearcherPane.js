@@ -148,7 +148,7 @@ class SearcherPane extends Component {
                 <SearcherActionButton
                   startIcon={<DefaultSearchIcon />}
                   onClick={this.debouncedRefresh}
-                  label={formatMessage(this.props.intl, module, "refreshFilterTooltip")}
+                  label={formatMessage(this.props.intl, "core", "searcher.applyFilters")}
                 />
               )}
             </Grid>
