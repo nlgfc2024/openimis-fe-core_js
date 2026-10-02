@@ -27,6 +27,7 @@ import FormattedMessage from "./FormattedMessage";
 import ProgressOrError from "./ProgressOrError";
 import SearcherExport from "./SearcherExport";
 import SearcherPane from "./SearcherPane";
+import SearcherActionButton from "./SearcherActionButton";
 import Table from "./Table";
 import InfoButton from "./InfoButton";
 
@@ -51,6 +52,19 @@ const styles = (theme) => ({
     gap: theme.spacing(1),
     backgroundColor: theme.palette.background.default,
     border: 0,
+  },
+  actionButtonWrapper: {
+    marginLeft: theme.spacing(1),
+  },
+  actionButton: {
+    minHeight: 42,
+    padding: theme.spacing(0.75, 2),
+    borderRadius: theme.shape.borderRadius,
+    whiteSpace: "nowrap",
+    "& .MuiTypography-root": {
+      fontWeight: 600,
+      letterSpacing: "0.02em",
+    },
   },
   tableContainer: {
     ...theme.table.container,
@@ -117,7 +131,7 @@ class SelectionMenu extends Component {
             exportFileFormats={this.props.exportFileFormats}
             exportFileFormat={this.props.exportFileFormat}
             setExportFileFormat={this.props.setExportFileFormat}
-            downloadWithIconButton={this.props.downloadWithIconButton}
+            downloadWithIconButton={this.props.downloadWithIconButton || this.props.headerActionButtons}
             displayClearAllColsButton={this.props.displayClearAllColsButton}
           />
         )}
@@ -129,7 +143,7 @@ class SelectionMenu extends Component {
             withSelection={this.props.withSelection}
             selection={this.props.selection}
             contributionKey={contributionKey}
-            downloadWithIconButton={this.props.downloadWithIconButton}
+            downloadWithIconButton={this.props.downloadWithIconButton || this.props.headerActionButtons}
           />
         )}
       </Grid>
@@ -191,10 +205,11 @@ class SelectionMenu extends Component {
       actions = [],
       processing,
       actionsContributionKey = null,
+      headerActionButtons = false,
     } = this.props;
 
     let contributed_entries = modulesManager.getContribs(actionsContributionKey);
-    if (!actions.length && !contributed_entries) return null;
+    if (!actions.length && !contributed_entries && !(headerActionButtons && this.props.exportable)) return null;
     if (processing) {
       return <CircularProgress className={classes.processing} size={24} />;
     }
@@ -458,17 +473,23 @@ class Searcher extends Component {
 
     return searcherActions.map((action, idx) =>
       action.authorized && (
-        <Grid item key={`searcher-action-${idx}`}>
-          <Button
-            key={action.label}
-            onClick={action.onClick}
-            startIcon={action.icon}
-            variant={action.variant ?? "contained"}
-            color={action.color ?? "primary"}
-            className={classes.actionButton}
-          >
-            <Typography variant="body2">{action.label}</Typography>
-          </Button>
+        <Grid item key={`searcher-action-${idx}`} className={classes.actionButtonWrapper}>
+          {action.render ? action.render({
+            className: classes.actionButton,
+            size: action.size ?? "medium",
+          }) : (
+            <SearcherActionButton
+              onClick={() => action.onClick(this.filtersToQueryParams())}
+              startIcon={action.icon}
+              label={action.label}
+              variant={action.variant ?? "contained"}
+              color={action.color ?? "primary"}
+              size={action.size ?? "medium"}
+              disabled={action.disabled}
+              className={classes.actionButton}
+              borderless={false}
+            />
+          )}
         </Grid>
       )
     );
@@ -532,12 +553,15 @@ class Searcher extends Component {
       setExportFileFormat,
       selectWithCheckbox = false,
       enableActionButtons = false,
+      enableHeaderActionButtons = false,
       searcherActions = [],
       downloadWithIconButton = false,
       displayClearAllColsButton,
       infoButtonContent = '',
       searcherActionsPosition = 'top-right',
     } = this.props;
+    const showHeaderActionButtons = enableHeaderActionButtons
+      || (enableActionButtons && searcherActionsPosition === "header-right");
     return (
       <Fragment>
 
@@ -601,7 +625,7 @@ class Searcher extends Component {
                 <Grid container alignItems="center" item xs={this.isWorker ? 5 : 4} className={classes.paperHeader}>
                   {fetchedItems && (
                     <Grid container direction="row" justify="flex-end" className={classes.paperHeaderAction}>
-                      {searcherActionsPosition === "header-right" && this.renderSearcherActions()}
+                      {showHeaderActionButtons && this.renderSearcherActions()}
                       <Grid item>
                         <StyledSelectionMenu
                           selectWithCheckbox={selectWithCheckbox}
@@ -616,6 +640,7 @@ class Searcher extends Component {
                           actions={actions}
                           processing={processing}
                           actionsContributionKey={actionsContributionKey}
+                          headerActionButtons={enableHeaderActionButtons}
                           filters={this.state.filters}
                           exportable={exportable}
                           exportFetch={exportFetch}
@@ -628,7 +653,7 @@ class Searcher extends Component {
                           exportFileFormats={exportFileFormats}
                           exportFileFormat={exportFileFormat}
                           setExportFileFormat={setExportFileFormat}
-                          downloadWithIconButton={downloadWithIconButton}
+                          downloadWithIconButton={downloadWithIconButton || enableHeaderActionButtons}
                           displayClearAllColsButton={displayClearAllColsButton}
                         />
                       </Grid>

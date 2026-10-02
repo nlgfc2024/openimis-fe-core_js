@@ -53,6 +53,7 @@ import ConfirmDialog from "./components/dialogs/ConfirmDialog";
 import SelectDialog from "./components/dialogs/SelectDialog";
 import AdvancedFiltersDialog from "./components/dialogs/AdvancedFiltersDialog";
 import WarningBox from "./components/generics/WarningBox";
+import InfoBanner from "./components/generics/InfoBanner";
 import {
   baseApiUrl,
   apiHeaders,
@@ -293,6 +294,7 @@ export {
   FatalError,
   AlertForwarder,
   WarningBox,
+  InfoBanner,
   SelectInput,
   TextInput,
   ValidatedTextInput,
