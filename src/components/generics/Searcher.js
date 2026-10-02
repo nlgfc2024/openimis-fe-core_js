@@ -131,7 +131,7 @@ class SelectionMenu extends Component {
             exportFileFormats={this.props.exportFileFormats}
             exportFileFormat={this.props.exportFileFormat}
             setExportFileFormat={this.props.setExportFileFormat}
-            downloadWithIconButton={this.props.downloadWithIconButton}
+            downloadWithIconButton={this.props.downloadWithIconButton || this.props.headerActionButtons}
             displayClearAllColsButton={this.props.displayClearAllColsButton}
           />
         )}
@@ -143,7 +143,7 @@ class SelectionMenu extends Component {
             withSelection={this.props.withSelection}
             selection={this.props.selection}
             contributionKey={contributionKey}
-            downloadWithIconButton={this.props.downloadWithIconButton}
+            downloadWithIconButton={this.props.downloadWithIconButton || this.props.headerActionButtons}
           />
         )}
       </Grid>
@@ -205,10 +205,11 @@ class SelectionMenu extends Component {
       actions = [],
       processing,
       actionsContributionKey = null,
+      headerActionButtons = false,
     } = this.props;
 
     let contributed_entries = modulesManager.getContribs(actionsContributionKey);
-    if (!actions.length && !contributed_entries) return null;
+    if (!actions.length && !contributed_entries && !(headerActionButtons && this.props.exportable)) return null;
     if (processing) {
       return <CircularProgress className={classes.processing} size={24} />;
     }
@@ -481,7 +482,7 @@ class Searcher extends Component {
               onClick={() => action.onClick(this.filtersToQueryParams())}
               startIcon={action.icon}
               label={action.label}
-              variant={action.variant ?? "outlined"}
+              variant={action.variant ?? "contained"}
               color={action.color ?? "primary"}
               size={action.size ?? "medium"}
               disabled={action.disabled}
@@ -552,12 +553,15 @@ class Searcher extends Component {
       setExportFileFormat,
       selectWithCheckbox = false,
       enableActionButtons = false,
+      enableHeaderActionButtons = false,
       searcherActions = [],
       downloadWithIconButton = false,
       displayClearAllColsButton,
       infoButtonContent = '',
       searcherActionsPosition = 'top-right',
     } = this.props;
+    const showHeaderActionButtons = enableHeaderActionButtons
+      || (enableActionButtons && searcherActionsPosition === "header-right");
     return (
       <Fragment>
 
@@ -621,7 +625,7 @@ class Searcher extends Component {
                 <Grid container alignItems="center" item xs={this.isWorker ? 5 : 4} className={classes.paperHeader}>
                   {fetchedItems && (
                     <Grid container direction="row" justify="flex-end" className={classes.paperHeaderAction}>
-                      {searcherActionsPosition === "header-right" && this.renderSearcherActions()}
+                      {showHeaderActionButtons && this.renderSearcherActions()}
                       <Grid item>
                         <StyledSelectionMenu
                           selectWithCheckbox={selectWithCheckbox}
@@ -636,6 +640,7 @@ class Searcher extends Component {
                           actions={actions}
                           processing={processing}
                           actionsContributionKey={actionsContributionKey}
+                          headerActionButtons={enableHeaderActionButtons}
                           filters={this.state.filters}
                           exportable={exportable}
                           exportFetch={exportFetch}
@@ -648,7 +653,7 @@ class Searcher extends Component {
                           exportFileFormats={exportFileFormats}
                           exportFileFormat={exportFileFormat}
                           setExportFileFormat={setExportFileFormat}
-                          downloadWithIconButton={downloadWithIconButton}
+                          downloadWithIconButton={downloadWithIconButton || enableHeaderActionButtons}
                           displayClearAllColsButton={displayClearAllColsButton}
                         />
                       </Grid>

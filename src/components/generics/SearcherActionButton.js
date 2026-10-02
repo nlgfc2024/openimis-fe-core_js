@@ -11,7 +11,7 @@ const SearcherActionButton = ({
   label,
   variant = "outlined",
   color = "primary",
-  size = "small",
+  size = "medium",
   disabled = false,
   className,
   borderless = true,

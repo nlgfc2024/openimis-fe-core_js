@@ -1,6 +1,4 @@
 {
-  "core.searcher.applyFilters": "Apply Filters",
-  "core.searcher.applyFilters": "Apply Filters",
   "core.asyncJob.waiting": "Waiting for the background job to start...",
   "core.asyncJob.progress": "{processed} of {total} ({percent}%)",
   "core.asyncJob.status.RECEIVED": "Received",

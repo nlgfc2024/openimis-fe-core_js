@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { injectIntl } from "react-intl";
 import { useDispatch, useSelector } from "react-redux";
 
-import { MenuItem, Tooltip, Button, Typography } from "@material-ui/core";
+import { MenuItem, Tooltip } from "@material-ui/core";
 import withStyles from "@material-ui/core/styles/withStyles";
 import GetAppIcon from "@material-ui/icons/GetApp";
 
@@ -10,6 +10,7 @@ import { closeExportConfigDialog, openExportConfigDialog } from "../../actions";
 import { EXPORT_FILE_FORMATS } from "../../constants";
 import { formatMessage } from "../../helpers/i18n";
 import ExportConfigDialog from "../dialogs/ExportConfigDialog";
+import SearcherActionButton from "./SearcherActionButton";
 
 const styles = (theme) => ({
   error: {
@@ -124,15 +125,15 @@ function SearcherExport(props) {
           <Tooltip title={formatMessage(intl, "core", "exportSearchResult.tooltip")}>
             <div key={`selectionsMenu-export-${idx}`}>
               {downloadWithIconButton ? (
-                <Button
-                  onClick={(e) => item.action()}
+                <SearcherActionButton
+                  onClick={item.action}
                   disabled={!enabled(selection)}
-                  variant="contained"
-                  color="primary"
+                  variant="outlined"
                   startIcon={item.icon}
-                >
-                  <Typography variant="body2"> {item.text} </Typography>
-                </Button>
+                  label={item.text}
+                  size="medium"
+                  borderless={false}
+                />
               ) : (
                 <MenuItem onClick={(e) => item.action()} disabled={!enabled(selection)}>
                   {item.text}
