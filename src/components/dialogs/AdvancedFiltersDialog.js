@@ -191,6 +191,7 @@ const AdvancedFiltersDialog = ({
           startIcon={<FilterListIcon />}
           label={formatMessage(intl, "core", "advancedFilters")}
           onClick={handleOpen}
+          borderless={false}
         />
       </Grid>
       { appliedFiltersRowStructure.length > 0 && hasCustomFilters()

@@ -616,9 +616,9 @@ export function clearAlert() {
   };
 }
 
-export function coreConfirm(title, message, intent = null) {
+export function coreConfirm(title, message, intent = null, severity = "neutral") {
   return (dispatch) => {
-    dispatch({ type: "CORE_CONFIRM", payload: { title, message, intent } });
+    dispatch({ type: "CORE_CONFIRM", payload: { title, message, intent, severity } });
   };
 }
 
