@@ -125,6 +125,8 @@
   "core.UserActivityReport.user": "User",
   "core.UserActivityReport.user.null": "All users",
   "core.advancedFilters": "Advanced Filters",
+  "core.applyFilters": "Apply Filters",
+  "core.clearFilters": "Clear Filters",
   "core.advancedFilters.field": "Field",
   "core.advancedFilters.filter": "Filter",
   "core.advancedFilters.value": "Value",

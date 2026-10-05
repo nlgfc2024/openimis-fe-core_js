@@ -51,7 +51,8 @@ const styles = (theme) => ({
     ...theme.paper.header,
     display: "flex",
     justifyContent: "flex-end",
-    alignItems: "center"
+    alignItems: "center",
+    gap: theme.spacing(1),
   },
 });
 
@@ -141,14 +142,16 @@ class SearcherPane extends Component {
                 <SearcherActionButton
                   startIcon={<ResetFilterIcon />}
                   onClick={this.debouncedReset}
-                  label={formatMessage(this.props.intl, module, "resetFilterTooltip")}
+                  label={formatMessage(this.props.intl, "core", "clearFilters")}
+                  borderless={false}
                 />
               )}
               {!!refresh && (
                 <SearcherActionButton
                   startIcon={<DefaultSearchIcon />}
                   onClick={this.debouncedRefresh}
-                  label={formatMessage(this.props.intl, module, "refreshFilterTooltip")}
+                  label={formatMessage(this.props.intl, "core", "applyFilters")}
+                  borderless={false}
                 />
               )}
             </Grid>
