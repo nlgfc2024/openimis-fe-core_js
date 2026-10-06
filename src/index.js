@@ -54,6 +54,8 @@ import SelectDialog from "./components/dialogs/SelectDialog";
 import AdvancedFiltersDialog from "./components/dialogs/AdvancedFiltersDialog";
 import WarningBox from "./components/generics/WarningBox";
 import InfoBanner from "./components/generics/InfoBanner";
+import LoadingButton from "./components/generics/LoadingButton";
+import LoadingOverlay from "./components/generics/LoadingOverlay";
 import {
   baseApiUrl,
   apiHeaders,
@@ -295,6 +297,8 @@ export {
   AlertForwarder,
   WarningBox,
   InfoBanner,
+  LoadingButton,
+  LoadingOverlay,
   SelectInput,
   TextInput,
   ValidatedTextInput,
