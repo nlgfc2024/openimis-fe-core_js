@@ -11,9 +11,9 @@ const styles = (theme) => ({
   secondaryButton: theme.dialog.secondaryButton,
   warningContent: {
     alignItems: "flex-start",
-    backgroundColor: "#bd7300",
+    backgroundColor: theme.palette.warning.main,
     borderRadius: 4,
-    color: "#fff",
+    color: theme.palette.warning.contrastText,
     display: "flex",
     gap: theme.spacing(1),
     margin: `${theme.spacing(1)}px ${theme.spacing(3)}px`,
@@ -28,9 +28,9 @@ const styles = (theme) => ({
   },
   infoContent: {
     alignItems: "flex-start",
-    backgroundColor: "#e3f2fd",
+    backgroundColor: theme.palette.info.light,
     borderRadius: 4,
-    color: "#174f7c",
+    color: theme.palette.info.dark,
     display: "flex",
     gap: theme.spacing(1),
     margin: `${theme.spacing(1)}px ${theme.spacing(3)}px`,

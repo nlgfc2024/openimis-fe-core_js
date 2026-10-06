@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { bindActionCreators } from "redux";
 import { injectIntl } from "react-intl";
 import { connect } from "react-redux";
+import { withTheme } from "@material-ui/core/styles";
 import {
   Button,
   Dialog,
@@ -38,7 +39,7 @@ class AlertDialog extends Component {
   };
 
   render() {
-    const { intl, alert } = this.props;
+    const { intl, alert, theme } = this.props;
     const isSuccess = alert?.severity === "success";
     return (
       <Dialog
@@ -52,7 +53,17 @@ class AlertDialog extends Component {
             {!isSuccess && <DialogTitle>{alert.title ?? formatMessage(intl, "core", "FatalError.title")}</DialogTitle>}
             <DialogContent>
               {isSuccess ? (
-                <Grid container wrap="nowrap" style={{ backgroundColor: "#e8f5e9", borderRadius: 4, color: "#23733d", gap: 12, padding: 16 }}>
+                <Grid
+                  container
+                  wrap="nowrap"
+                  style={{
+                    backgroundColor: theme.palette.success.light,
+                    borderRadius: theme.shape.borderRadius,
+                    color: theme.palette.success.dark,
+                    gap: theme.spacing(1.5),
+                    padding: theme.spacing(2),
+                  }}
+                >
                   <CheckCircleOutlineIcon aria-hidden="true" />
                   <Grid item>
                     <Typography variant="subtitle1" style={{ fontWeight: 600 }}>{alert.title}</Typography>
@@ -107,4 +118,4 @@ const mapDispatchToProps = (dispatch) => {
   );
 };
 
-export default injectIntl(connect((state) => ({ alert: state.core.alert }), mapDispatchToProps)(AlertDialog));
+export default withTheme(injectIntl(connect((state) => ({ alert: state.core.alert }), mapDispatchToProps)(AlertDialog)));
