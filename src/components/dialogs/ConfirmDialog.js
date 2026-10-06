@@ -1,6 +1,6 @@
 import React from "react";
 import { injectIntl } from "react-intl";
-import { withTheme, withStyles } from "@material-ui/core/styles";
+import { fade, withTheme, withStyles } from "@material-ui/core/styles";
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@material-ui/core";
 import InfoOutlinedIcon from "@material-ui/icons/InfoOutlined";
 import WarningOutlinedIcon from "@material-ui/icons/WarningOutlined";
@@ -11,9 +11,9 @@ const styles = (theme) => ({
   secondaryButton: theme.dialog.secondaryButton,
   warningContent: {
     alignItems: "flex-start",
-    backgroundColor: theme.palette.warning.main,
+    backgroundColor: fade(theme.palette.warning.main, 0.14),
     borderRadius: 4,
-    color: theme.palette.warning.contrastText,
+    color: theme.palette.warning.dark,
     display: "flex",
     gap: theme.spacing(1),
     margin: `${theme.spacing(1)}px ${theme.spacing(3)}px`,
@@ -28,7 +28,7 @@ const styles = (theme) => ({
   },
   infoContent: {
     alignItems: "flex-start",
-    backgroundColor: theme.palette.info.light,
+    backgroundColor: fade(theme.palette.info.main, 0.12),
     borderRadius: 4,
     color: theme.palette.info.dark,
     display: "flex",

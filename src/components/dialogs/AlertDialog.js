@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import { bindActionCreators } from "redux";
 import { injectIntl } from "react-intl";
 import { connect } from "react-redux";
-import { withTheme } from "@material-ui/core/styles";
+import { fade, withTheme } from "@material-ui/core/styles";
 import {
   Button,
   Dialog,
@@ -30,12 +30,8 @@ class AlertDialog extends Component {
   };
 
   dismissAlert = () => {
-    const { alert, clearAlert } = this.props;
-    const refreshOnClose = alert?.refreshOnClose;
+    const { clearAlert } = this.props;
     clearAlert();
-    if (refreshOnClose && typeof window !== "undefined") {
-      window.location.reload();
-    }
   };
 
   render() {
@@ -45,8 +41,6 @@ class AlertDialog extends Component {
       <Dialog
         open={Boolean(alert)}
         onClose={this.dismissAlert}
-        disableBackdropClick={Boolean(alert?.refreshOnClose)}
-        disableEscapeKeyDown={Boolean(alert?.refreshOnClose)}
       >
         {alert && (
           <>
@@ -57,7 +51,7 @@ class AlertDialog extends Component {
                   container
                   wrap="nowrap"
                   style={{
-                    backgroundColor: theme.palette.success.light,
+                    backgroundColor: fade(theme.palette.success.main, 0.12),
                     borderRadius: theme.shape.borderRadius,
                     color: theme.palette.success.dark,
                     gap: theme.spacing(1.5),
