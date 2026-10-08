@@ -214,7 +214,11 @@ export function formatSorter(orderBy, attr, asc) {
 
 // Match the established failure, not generic permission or CSRF-related text.
 export const isSessionError = (status, errors = []) => status === 401 || errors.some(
-  (error) => String(error?.message || "").trim().toLowerCase() === "csrf token missing or incorrect.",
+  (error) => {
+    const message = String(error?.message || "").trim().toLowerCase();
+    // The legacy production checker raises KeyError when the session expires.
+    return message === "csrf token missing or incorrect." || message === "'csrftoken'";
+  },
 );
 
 export const actionRequiresAuthentication = (action) => {

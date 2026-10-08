@@ -150,7 +150,7 @@ test('session-based CSRF storage and non-browser guards', () => {
   delete global.document; delete global.localStorage;
   assert.equal(api.getCsrfToken(), null);
 });
-test('periodic/no-arg login does not refresh a valid Django-only session', async () => {
+test('no-arg login probes the server before attempting refresh', async () => {
   setup({ user: okUser, isInitialized: true });
   replies.push(() => ok(okUser), () => ok(csrf));
   const result = await store.dispatch(actions.login());
@@ -165,7 +165,7 @@ test('password-expiry response preserves the custom login workflow', async () =>
   assert.equal(result.resetEmailSent, true);
   assert.equal(requests.length, 1);
 });
-test('established session refresh does not rotate the masked CSRF token every timer tick', async () => {
+test('no-arg login reuses an established masked CSRF token', async () => {
   setup({ user: okUser, isInitialized: true });
   localStorage.setItem('csrfToken', 'existing');
   replies.push(() => ok(okUser));
@@ -202,4 +202,40 @@ test('successful custom credential login stores CSRF and preserves expiry warnin
   assert.equal(result.passwordExpiryWarning, true);
   assert.equal(result.passwordExpiresInDays, 3);
   assert.equal(localStorage.getItem('csrfToken'), 'server-session-token');
+});
+test('silent current-user 502 preserves loaded user, form state and fatal-error state', async () => {
+  setup({ user: okUser, isInitialized: true, error: null, unsavedDraft: { name: 'Unsubmitted' } });
+  const before = store.getState().core;
+  replies.push(() => reply(502, { detail: 'Backend restarting' }));
+  const result = await store.dispatch(actions.loadUser({ silent: true }));
+  assert.equal(result.payload.status, 502);
+  assert.equal(store.getState().core, before);
+  assert.equal(dialogs().length, 0);
+});
+test('periodic refresh renews JWT without calling current-user or requiring a separate refresh token', async () => {
+  setup({ user: okUser, isInitialized: true });
+  replies.push(() => ok({ data: { refreshToken: { refreshExpiresIn: 42 } } }));
+  await store.dispatch(actions.refreshAuthToken());
+  assert.equal(requests.length, 1);
+  assert.match(requests[0].body, /refreshToken/);
+  assert.deepEqual(store.getState().core.user, okUser);
+  assert.equal(dialogs().length, 0);
+});
+test('periodic refresh 502 leaves the authenticated app and edits intact', async () => {
+  setup({ user: okUser, isInitialized: true, error: null, unsavedDraft: 'draft' });
+  const before = store.getState().core;
+  replies.push(() => reply(502, { detail: 'Backend restarting' }));
+  await store.dispatch(actions.refreshAuthToken());
+  assert.equal(store.getState().core, before);
+  assert.equal(dialogs().length, 0);
+});
+test('expired production CSRF session KeyError prompts once and preserves caller errors', async () => {
+  setup({ user: okUser, isInitialized: true });
+  replies.push(() => ok({ errors: [{ message: "'csrftoken'" }] }), () => ok({ errors: [{ message: "'csrftoken'" }] }));
+  const responses = await Promise.all([store.dispatch(actions.graphql('{ a }')), store.dispatch(actions.graphql('{ b }'))]);
+  assert.ok(responses.every((result) => result.payload.errors[0].message === "'csrftoken'"));
+  assert.equal(dialogs().length, 1);
+  for (const message of ['csrftoken', 'Cannot query field csrftoken', 'csrf', 'permission denied']) {
+    assert.equal(api.isSessionError(200, [{ message }]), false);
+  }
 });

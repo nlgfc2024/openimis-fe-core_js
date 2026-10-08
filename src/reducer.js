@@ -105,6 +105,8 @@ function reducer(
         return action.meta?.silent ? state : { ...state, user: null, authError: null, error: null };
       }
       if ((action.payload?.status ?? action.payload?.response?.status) === 403) return state;
+      // Background outages must not unmount the authenticated app or lose edits.
+      if (action.meta?.silent && state.user) return state;
       return {
         ...state,
         error: {
