@@ -53,6 +53,7 @@ import ConfirmDialog from "./components/dialogs/ConfirmDialog";
 import SelectDialog from "./components/dialogs/SelectDialog";
 import AdvancedFiltersDialog from "./components/dialogs/AdvancedFiltersDialog";
 import WarningBox from "./components/generics/WarningBox";
+import FeedbackBanner from "./components/generics/FeedbackBanner";
 import InfoBanner from "./components/generics/InfoBanner";
 import LoadingButton from "./components/generics/LoadingButton";
 import LoadingOverlay from "./components/generics/LoadingOverlay";
@@ -298,6 +299,7 @@ export {
   FatalError,
   AlertForwarder,
   WarningBox,
+  FeedbackBanner,
   InfoBanner,
   LoadingButton,
   LoadingOverlay,

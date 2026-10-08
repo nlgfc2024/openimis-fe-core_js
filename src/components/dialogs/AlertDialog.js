@@ -2,7 +2,6 @@ import React, { Component } from "react";
 import { bindActionCreators } from "redux";
 import { injectIntl } from "react-intl";
 import { connect } from "react-redux";
-import { fade, withTheme } from "@material-ui/core/styles";
 import {
   Button,
   Dialog,
@@ -15,10 +14,10 @@ import {
 } from "@material-ui/core";
 import ArrowDropDownIcon from "@material-ui/icons/ArrowDropDown";
 import ArrowRightIcon from "@material-ui/icons/ArrowRight";
-import CheckCircleOutlineIcon from "@material-ui/icons/CheckCircleOutline";
 import { clearAlert } from "../../actions";
 import { formatMessage } from "../../helpers/i18n";
 import { ensureArray } from "../../helpers/utils";
+import FeedbackBanner from "../generics/FeedbackBanner";
 
 class AlertDialog extends Component {
   state = {
@@ -35,7 +34,7 @@ class AlertDialog extends Component {
   };
 
   render() {
-    const { intl, alert, theme } = this.props;
+    const { intl, alert } = this.props;
     const isSuccess = alert?.severity === "success";
     return (
       <Dialog
@@ -47,25 +46,11 @@ class AlertDialog extends Component {
             {!isSuccess && <DialogTitle>{alert.title ?? formatMessage(intl, "core", "FatalError.title")}</DialogTitle>}
             <DialogContent>
               {isSuccess ? (
-                <Grid
-                  container
-                  wrap="nowrap"
-                  style={{
-                    backgroundColor: fade(theme.palette.success.main, 0.12),
-                    borderRadius: theme.shape.borderRadius,
-                    color: theme.palette.success.dark,
-                    gap: theme.spacing(1.5),
-                    padding: theme.spacing(2),
-                  }}
-                >
-                  <CheckCircleOutlineIcon aria-hidden="true" />
-                  <Grid item>
-                    <Typography variant="subtitle1" style={{ fontWeight: 600 }}>{alert.title}</Typography>
-                    {ensureArray(alert.message).map((message, i) => (
-                      <DialogContentText key={`message-${i}`} style={{ color: "inherit", marginBottom: 0 }}>{message}</DialogContentText>
-                    ))}
-                  </Grid>
-                </Grid>
+                <FeedbackBanner severity="success" title={alert.title}>
+                  {ensureArray(alert.message).map((message, i) => (
+                    <DialogContentText key={`message-${i}`} style={{ color: "inherit", marginBottom: 0 }}>{message}</DialogContentText>
+                  ))}
+                </FeedbackBanner>
               ) : (
                 <Grid container>
                   <Grid item onClick={this.toggleOpen}>
@@ -112,4 +97,4 @@ const mapDispatchToProps = (dispatch) => {
   );
 };
 
-export default withTheme(injectIntl(connect((state) => ({ alert: state.core.alert }), mapDispatchToProps)(AlertDialog)));
+export default injectIntl(connect((state) => ({ alert: state.core.alert }), mapDispatchToProps)(AlertDialog));
