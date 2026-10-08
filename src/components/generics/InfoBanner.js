@@ -1,32 +1,17 @@
 import React from "react";
-import { Paper, Typography } from "@material-ui/core";
-import InfoOutlinedIcon from "@material-ui/icons/InfoOutlined";
-import { makeStyles } from "@material-ui/styles";
+import { makeStyles } from "@material-ui/core/styles";
+import FeedbackBanner from "./FeedbackBanner";
 
 const useStyles = makeStyles((theme) => ({
-  root: {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: theme.spacing(1),
-    marginBottom: theme.spacing(2),
-    padding: theme.spacing(1.5),
-    backgroundColor: "#e3f2fd",
-    color: "#174f7c",
-  },
-  icon: { marginTop: 2 },
-  title: { fontWeight: 600 },
+  root: { marginBottom: theme.spacing(2) },
 }));
 
 const InfoBanner = ({ title, children }) => {
   const classes = useStyles();
   return (
-    <Paper elevation={0} className={classes.root}>
-      <InfoOutlinedIcon className={classes.icon} fontSize="small" />
-      <div>
-        {title && <Typography className={classes.title}>{title}</Typography>}
-        {children && <Typography variant="body2">{children}</Typography>}
-      </div>
-    </Paper>
+    <div className={classes.root}>
+      <FeedbackBanner title={title}>{children}</FeedbackBanner>
+    </div>
   );
 };
 
