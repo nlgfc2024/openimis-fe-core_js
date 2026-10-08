@@ -4,11 +4,13 @@ import { fade, makeStyles } from "@material-ui/core/styles";
 import CheckCircleOutlineIcon from "@material-ui/icons/CheckCircleOutline";
 import ErrorOutlineIcon from "@material-ui/icons/ErrorOutline";
 import InfoOutlinedIcon from "@material-ui/icons/InfoOutlined";
+import WarningAmberIcon from "@material-ui/icons/WarningAmber";
 
 const icons = {
   error: ErrorOutlineIcon,
   info: InfoOutlinedIcon,
   success: CheckCircleOutlineIcon,
+  warning: WarningAmberIcon,
 };
 
 const useStyles = makeStyles((theme) => ({
