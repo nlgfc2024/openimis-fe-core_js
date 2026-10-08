@@ -3,7 +3,7 @@ import { bindActionCreators } from "redux";
 import { connect } from "react-redux";
 import { injectIntl } from "react-intl";
 
-import { Grid, FormControlLabel, Checkbox, Fab, Button } from "@material-ui/core";
+import { Grid, FormControlLabel, Checkbox, Button } from "@material-ui/core";
 import { withTheme, withStyles } from "@material-ui/core/styles";
 import AddIcon from "@material-ui/icons/Add";
 import DeleteIcon from "@material-ui/icons/Delete";
@@ -49,7 +49,6 @@ const styles = (theme) => ({
   item: {
     padding: theme.spacing(1),
   },
-  fab: theme.fab,
 });
 
 const DEFAULT_ORDER_BY = "name";
@@ -188,6 +187,19 @@ class Roles extends Component {
   }
 
   onAdd = () => historyPush(this.props.modulesManager, this.props.history, "core.route.role");
+
+  searcherActions = () => {
+    const { intl, rights } = this.props;
+    return [
+      {
+        label: formatMessage(intl, "core", "roleManagement.createButton.tooltip"),
+        icon: <AddIcon />,
+        authorized: rights.includes(RIGHT_ROLE_CREATE),
+        onClick: this.onAdd,
+        variant: "contained",
+      },
+    ];
+  };
 
   onDoubleClick = (role, newTab = false) => {
     const { rights, modulesManager, history } = this.props;
@@ -342,16 +354,10 @@ class Roles extends Component {
             rowLocked={this.isRowLocked}
             rowDisabled={this.isRowDisabled}
             onDoubleClick={(role) => this.isOnDoubleClickEnabled(role) && this.onDoubleClick(role)}
+            enableActionButtons
+            searcherActionsPosition="header-right"
+            searcherActions={this.searcherActions()}
           />
-          {rights.includes(RIGHT_ROLE_CREATE) &&
-            withTooltip(
-              <div className={classes.fab}>
-                <Fab color="primary" onClick={this.onAdd}>
-                  <AddIcon />
-                </Fab>
-              </div>,
-              formatMessage(intl, "core", "roleManagement.createButton.tooltip"),
-            )}
         </div>
       )
     );
