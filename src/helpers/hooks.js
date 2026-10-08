@@ -2,7 +2,6 @@ import { useModulesManager } from "@openimis/fe-core";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
-  refreshAuthToken,
   login,
   logout,
   initialize,
@@ -159,7 +158,7 @@ export const useAuthentication = () => {
   const isInitialized = useSelector((state) => state.core.isInitialized);
   const error = useSelector((state) => state.core.authError);
   const refresh = async () => {
-    await dispatch(refreshAuthToken());
+    await dispatch(login());
   };
 
   return {
@@ -167,7 +166,7 @@ export const useAuthentication = () => {
     error,
     isAuthenticated: Boolean(user),
     isInitialized,
-    initialize: () => dispatch(initialize()),
+    initialize: (options) => dispatch(initialize(options)),
     login: (credentials) => dispatch(login(credentials)),
     refresh,
     logout: () => dispatch(logout()),

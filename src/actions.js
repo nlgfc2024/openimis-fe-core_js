@@ -8,6 +8,9 @@ import {
   formatGQLString,
   formatMutation,
   formatServerError,
+  actionRequiresAuthentication,
+  getCsrfToken,
+  storeCsrfToken,
 } from "./helpers/api";
 
 const REQUESTED_WITH = 'webapp'
@@ -46,20 +49,10 @@ function getApiUrl() {
 
 export const baseApiUrl = getApiUrl();
 
-function getCsrfToken() {
-  const CSRF_TOKEN_NAME = 'csrftoken';
-  const CSRF_NOT_FOUND = null;
-
-  const cookies = document.cookie;
-  const cookieArray = cookies.split('; ');
-
-  const csrfCookie = cookieArray.find(cookie => cookie.startsWith(CSRF_TOKEN_NAME));
-  return csrfCookie?.split('=')[1] ?? CSRF_NOT_FOUND;
-}
-
 export function apiHeaders() {
   let headers = {
     "Content-Type": "application/json",
+    "X-CSRFToken": getCsrfToken(),
   };
   return headers;
 }
@@ -81,10 +74,6 @@ export function journalize(mutation, meta) {
     mutation.status = 0;
     dispatch({ type: "CORE_MUTATION_ADD", payload: mutation, meta });
   };
-}
-
-function isCsrfError(error) {
-  return error?.message?.includes("CSRF token missing or incorrect.");
 }
 
 export function graphql(payload, type = "GRAPHQL_QUERY", params = {}) {
@@ -117,19 +106,8 @@ export function graphql(payload, type = "GRAPHQL_QUERY", params = {}) {
           ],
         }),
       );
-      if (response.error) {
+      if (response.error && !actionRequiresAuthentication(response)) {
         dispatch(coreAlert(formatServerError(response.payload)));
-      }
-
-      const error = response.payload?.errors?.[0];
-      if (error && isCsrfError(error)) {
-        await dispatch(logout());
-
-        requestAnimationFrame(() => {
-          window.location.reload();
-        });
-
-        return;
       }
 
       return response;
@@ -139,7 +117,7 @@ export function graphql(payload, type = "GRAPHQL_QUERY", params = {}) {
   };
 }
 
-export function graphqlWithVariables(operation, variables, type = "GRAPHQL_QUERY", params = {}, customHeaders = {}) {
+export function graphqlWithVariables(operation, variables, type = "GRAPHQL_QUERY", params = {}, customHeaders = {}, options = {}) {
   let req, resp, err;
   if (Array.isArray(type)) {
     [req, resp, err] = type;
@@ -154,6 +132,7 @@ export function graphqlWithVariables(operation, variables, type = "GRAPHQL_QUERY
         endpoint: `${baseApiUrl}/graphql`,
         method: "POST",
         body: JSON.stringify({ query: operation, variables }),
+        silent: options.silent,
         headers: {
           ...customHeaders
         },
@@ -254,7 +233,7 @@ export function graphqlMutation(mutation, variables, type = "CORE_TRIGGER_MUTATI
 import * as Sentry from "@sentry/react";
 
 export function fetch(config) {
-  const csrfToken = localStorage.getItem("csrfToken");
+  const { silent = false, ...request } = config;
 
   return async (dispatch, getState) => {
     let action;
@@ -262,11 +241,22 @@ export function fetch(config) {
     try {
       action = await dispatch({
         [RSAA]: {
-          ...config,
+          ...request,
+          types: request.types.map((type) => {
+            const descriptor = typeof type === "string" ? { type } : type;
+            const originalMeta = descriptor.meta;
+            return {
+              ...descriptor,
+              meta: (...args) => ({
+                ...(typeof originalMeta === "function" ? originalMeta(...args) : originalMeta),
+                silent,
+              }),
+            };
+          }),
           headers: {
             "Content-Type": "application/json",
             "X-Requested-With": "XMLHttpRequest",
-            "X-CSRFToken": csrfToken,
+            "X-CSRFToken": getCsrfToken(),
             ...config.headers,
           },
         },
@@ -275,10 +265,24 @@ export function fetch(config) {
       const endpoint = config.endpoint;
       const payload = action?.payload || {};
       const response = payload?.response;
-      const status = response?.status;
-      const statusText = response?.statusText;
+      const status = payload?.status ?? response?.status;
+      const statusText = payload?.statusText ?? response?.statusText;
       const gqlErrors = payload?.errors || response?.errors || [];
       const message = payload?.message || action?.error?.message;
+
+      // This is the sole owner of session UI; silent probes retain refresh cookies.
+      if (actionRequiresAuthentication(action)) {
+        const core = getState()?.core;
+        if (!silent && core?.isInitialized && core?.user && !core?.sessionExpiryPending) {
+          dispatch(coreConfirm(
+            "Session Expired",
+            "Your session has expired, You will be redirected to the login page.",
+            "csrf_logout",
+          ));
+        }
+        return action;
+      }
+      if (silent) return action;
 
       if (action.error) {
         let errorMessage = "";
@@ -306,8 +310,6 @@ export function fetch(config) {
             endpoint,
             status,
             statusText,
-            body: config.body,
-            response: action.payload,
           },
         });
       }
@@ -324,39 +326,9 @@ export function fetch(config) {
           extra: {
             endpoint,
             errors: gqlErrors,
-            query: config.body,
           },
         });
       }
-
-      const norm = (m) =>
-        String(m || "")
-          .toLowerCase()
-          .replace(/['"]/g, "")
-          .trim();
-
-      const csrfError = gqlErrors.some((e) => {
-        const msg = norm(e?.message);
-
-        return (
-          msg === "csrftoken" ||
-          msg === "csrf token missing or incorrect."
-        );
-      });
-
-      const isAuthenticated = Boolean(getState()?.core?.user);
-
-      if (csrfError && isAuthenticated) {
-        dispatch(
-          coreConfirm(
-            "Session Expired",
-            "Your session has expired, You will be redirected to the login page.",
-            "csrf_logout"
-          )
-        );
-        return action;
-      }
-
     } catch (err) {
       const errorMessage = "Server not responding";
 
@@ -368,7 +340,6 @@ export function fetch(config) {
         },
         extra: {
           endpoint: config.endpoint,
-          body: config.body,
           originalError: err,
         },
       });
@@ -380,9 +351,10 @@ export function fetch(config) {
   };
 }
 
-export function loadUser() {
+export function loadUser(options = {}) {
   return fetch({
     endpoint: `${baseApiUrl}/core/users/current_user/`,
+    silent: options.silent,
     method: "GET",
     types: ["CORE_USERS_CURRENT_USER_REQ", "CORE_USERS_CURRENT_USER_RESP", "CORE_USERS_CURRENT_USER_ERR"],
   });
@@ -412,7 +384,7 @@ export function login(credentials) {
         );
         const responsePayload = response?.payload ?? response;
         const responseData = responsePayload?.data ?? responsePayload;
-        const responseErrors = responsePayload?.errors ?? response?.errors;
+        const responseErrors = responsePayload?.errors ?? responsePayload?.response?.errors ?? response?.errors;
 
         if (responseErrors?.length > 0) {
           const errorMessage = responseErrors[0].message;
@@ -448,7 +420,7 @@ export function login(credentials) {
         const csrfResponse = await dispatch(fetchCsrfToken());
         const csrfResponsePayload = csrfResponse?.payload ?? csrfResponse;
         const csrfResponseData = csrfResponsePayload?.data ?? csrfResponsePayload;
-        const csrfResponseErrors = csrfResponsePayload?.errors ?? csrfResponse?.errors;
+        const csrfResponseErrors = csrfResponsePayload?.errors ?? csrfResponsePayload?.response?.errors ?? csrfResponse?.errors;
         if (csrfResponseErrors?.length > 0) {
           const errorMessage = csrfResponseErrors[0].message;
           dispatch(authError({ message: errorMessage }));
@@ -459,7 +431,7 @@ export function login(credentials) {
           return { loginStatus: "CORE_AUTH_ERR", message: "GENERAL" };
         }
         if (csrfToken) {
-          localStorage.setItem('csrfToken', csrfToken);
+          storeCsrfToken(csrfToken);
         }
 
 
@@ -476,19 +448,14 @@ export function login(credentials) {
         return { loginStatus: "CORE_AUTH_ERR", message: error.message };
       }
     } else {
-      const refreshResponse = await dispatch(refreshAuthToken());
-      const refreshPayload = refreshResponse?.payload ?? refreshResponse;
-      const refreshErrors = refreshPayload?.errors ?? refreshResponse?.errors;
-      if (refreshErrors?.length > 0) {
-        return { loginStatus: "CORE_AUTH_NO_TOKEN", message: "" };
-      }
-      const action = await dispatch(loadUser());
-      return { loginStatus: action.type, message: action?.payload?.response?.detail ?? "Error occurred while loading user." };
+      // Keep the public no-argument login API used by existing consumers.
+      const action = await dispatch(restoreSession({ refreshCsrf: false }));
+      return { loginStatus: action.type, message: action?.payload?.response?.detail ?? "" };
     }
   };
 }
 
-export function fetchCsrfToken(jwtToken) {
+export function fetchCsrfToken(jwtToken, options = {}) {
   return async (dispatch) => {
     const csrfQuery = `mutation {
       getCsrfToken {
@@ -498,12 +465,12 @@ export function fetchCsrfToken(jwtToken) {
     const headers = jwtToken ? { "Authorization": `JWT ${jwtToken}` } : {};
 
     return dispatch(
-      graphqlMutation(csrfQuery, {}, ["CORE_AUTH_CSRTOKEN_REQ", "CORE_AUTH_CSRTOKEN_RESP", "CORE_AUTH_ERR"], {}, false, headers),
+      graphqlWithVariables(csrfQuery, {}, ["CORE_AUTH_CSRTOKEN_REQ", "CORE_AUTH_CSRTOKEN_RESP", "CORE_AUTH_ERR"], {}, headers, options),
     );
   };
 }
 
-export function refreshAuthToken() {
+export function refreshAuthToken(options = {}) {
   return (dispatch) => {
     const mutation = `
     mutation refreshAuthToken {
@@ -512,14 +479,48 @@ export function refreshAuthToken() {
       }
     }
   `;
-    return dispatch(graphqlMutation(mutation, {}, "CORE_AUTH_REFRESH_TOKEN"));
+    return dispatch(graphqlWithVariables(mutation, {}, "CORE_AUTH_REFRESH_TOKEN", {}, {}, options));
   };
 }
 
-export function initialize() {
+// The server accepts either a Django session or a JWT cookie. A refresh is only
+// attempted after an authentication failure, at most once per probe.
+export function restoreSession({ refreshCsrf = true } = {}) {
   return async (dispatch) => {
-    await dispatch(login());
-    return dispatch({ type: "CORE_INITIALIZED" });
+    let session = await dispatch(loadUser({ silent: true }));
+    if (actionRequiresAuthentication(session)) {
+      const refresh = await dispatch(refreshAuthToken({ silent: true }));
+      if (!refresh?.error && !refresh?.payload?.errors?.length && refresh?.payload?.data?.refreshToken) {
+        session = await dispatch(loadUser({ silent: true }));
+      }
+    }
+    if (actionRequiresAuthentication(session)) {
+      return dispatch(logout());
+    } else if (!session?.error && (refreshCsrf || !getCsrfToken())) {
+      // Also required for CSRF_USE_SESSIONS and this fork's session CSRF check.
+      const csrf = await dispatch(fetchCsrfToken(undefined, { silent: true }));
+      const token = csrf?.payload?.data?.getCsrfToken?.csrfToken;
+      if (token) storeCsrfToken(token);
+      if (actionRequiresAuthentication(csrf)) return dispatch(logout());
+      if (!token) {
+        // Do not silently mark boot ready for mutations without a session CSRF token.
+        dispatch(authError({ status: csrf?.payload?.status, statusText: "Unable to obtain CSRF token" }));
+        return csrf;
+      }
+    }
+    return session;
+  };
+}
+
+export function initialize({ publicRoute = false } = {}) {
+  return async (dispatch) => {
+    try {
+      if (!publicRoute) await dispatch(restoreSession());
+    } catch (error) {
+      dispatch(authError({ statusText: "Unable to initialize authentication" }));
+    } finally {
+      dispatch({ type: "CORE_INITIALIZED" });
+    }
   };
 }
 
@@ -542,8 +543,16 @@ export function logout() {
         }
       }
     `;
-    await dispatch(graphqlMutation(mutation, {}));
-    return dispatch({ type: "CORE_AUTH_LOGOUT" });
+    try {
+      await dispatch(graphqlWithVariables(mutation, {}, "CORE_AUTH_COOKIE_DELETE", {}, {}, { silent: true }));
+    } catch (error) {
+      // Local logout must complete even when cookie deletion cannot reach the server.
+      Sentry.captureException(new Error("Unable to clear authentication cookies"));
+    } finally {
+      if (typeof localStorage !== "undefined") localStorage.removeItem("csrfToken");
+      dispatch({ type: "CORE_AUTH_LOGOUT" });
+    }
+    return { type: "CORE_AUTH_LOGOUT" };
   };
 }
 
