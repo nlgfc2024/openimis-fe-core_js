@@ -553,8 +553,9 @@ export function authError(error) {
 
 export function logout({ silent = false } = {}) {
   return async (dispatch) => {
-    const sendLogout = () => dispatch(fetch({
+    const sendLogout = (csrfToken) => dispatch(fetch({
       endpoint: `${baseApiUrl}/core/logout/`,
+      headers: csrfToken ? { "X-CSRFToken": csrfToken } : {},
       method: "POST",
       silent: true,
       types: ["CORE_SESSION_LOGOUT_REQ", "CORE_SESSION_LOGOUT_RESP", "CORE_SESSION_LOGOUT_ERR"],
@@ -565,12 +566,14 @@ export function logout({ silent = false } = {}) {
       if (response?.payload?.status === 403) {
         // The Django CSRF session may have expired while its JWT is still valid.
         // Fetch a fresh CSRF token once, then retry the protected logout endpoint.
-        const csrf = await dispatch(fetchCsrfToken(undefined, { silent: true }));
-        const token = csrf?.payload?.data?.getCsrfToken?.csrfToken;
-        if (token) {
-          storeCsrfToken(token);
-          response = await sendLogout();
-        }
+        const csrf = await dispatch(fetch({
+          endpoint: `${baseApiUrl}/core/logout/csrf/`,
+          method: "GET",
+          silent: true,
+          types: ["CORE_LOGOUT_CSRF_REQ", "CORE_LOGOUT_CSRF_RESP", "CORE_LOGOUT_CSRF_ERR"],
+        }));
+        const token = csrf?.payload?.csrfToken;
+        if (token) response = await sendLogout(token);
       }
     } catch (error) {
       response = { error: true };

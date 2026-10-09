@@ -292,10 +292,12 @@ test('explicit logout clears server session before clearing local authentication
 });
 test('logout recovers expired CSRF session with one bootstrap and retry', async () => {
   setup({ user: okUser, isInitialized: true });
-  replies.push(() => reply(403, {}), () => ok(csrf), () => new Response(null, { status: 204 }));
+  replies.push(() => reply(403, {}), () => ok({ csrfToken: 'server-session-token' }), () => new Response(null, { status: 204 }));
   const result = await store.dispatch(actions.logout());
   assert.equal(result.type, 'CORE_AUTH_LOGOUT');
   assert.equal(requests.length, 3);
+  assert.match(requests[1].url, /core\/logout\/csrf\/$/);
+  assert.equal(requests[1].method, 'GET');
   assert.equal(requests[2].headers['X-CSRFToken'], 'server-session-token');
   assert.equal(dialogs().length, 0);
 });
