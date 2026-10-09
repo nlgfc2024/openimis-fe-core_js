@@ -130,6 +130,35 @@ test('pre-initialization protected failures show no session UI', async () => {
   await store.dispatch(actions.graphql('{ a }'));
   assert.equal(dialogs().length, 0);
 });
+for (const [failure, respond] of [
+  ['HTTP 401', unauthorized],
+  ['expired CSRF session', () => ok({ errors: [{ message: "'csrftoken'" }] })],
+]) {
+  test(`dismissing expiry confirmation allows a new prompt on ${failure}`, async () => {
+    setup({ user: okUser, isInitialized: true, unsavedDraft: { name: 'Unsubmitted' } });
+    replies.push(respond);
+    await store.dispatch(actions.graphql('{ a }'));
+    assert.equal(store.getState().core.sessionExpiryPending, true);
+
+    // Cancel and backdrop dismissal both dispatch clearConfirm(false).
+    store.dispatch(actions.clearConfirm(false));
+    assert.equal(store.getState().core.confirm, undefined);
+    assert.equal(store.getState().core.sessionExpiryPending, false);
+    assert.deepEqual(store.getState().core.user, okUser);
+    assert.deepEqual(store.getState().core.unsavedDraft, { name: 'Unsubmitted' });
+    assert.equal(events.filter((a) => a.type === 'CORE_AUTH_LOGOUT').length, 0);
+
+    replies.push(respond, respond);
+    const results = await Promise.all([
+      store.dispatch(actions.graphql('{ b }')),
+      store.dispatch(actions.graphql('{ c }')),
+    ]);
+    assert.ok(results.every((a) => api.actionRequiresAuthentication(a)));
+    assert.equal(dialogs().length, 2);
+    assert.equal(store.getState().core.confirm.intent, 'csrf_logout');
+    assert.equal(store.getState().core.sessionExpiryPending, true);
+  });
+}
 test('precise CSRF detection excludes schema and permission errors', () => {
   for (const message of ['csrftoken', 'unauthorized', 'permission denied', 'Cannot query field getCsrfToken']) assert.equal(api.isSessionError(200, [{ message }]), false);
   assert.equal(api.isSessionError(200, [{ message: 'CSRF token missing or incorrect.' }]), true);

@@ -76,6 +76,7 @@ function reducer(
       var s = {
         ...state,
         confirmed: action.payload,
+        sessionExpiryPending: false,
       };
       delete s.confirm;
       return s;
