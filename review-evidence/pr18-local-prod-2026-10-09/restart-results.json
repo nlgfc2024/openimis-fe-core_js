@@ -1,0 +1,11 @@
+{
+  "name": "Backend restart during unsaved form",
+  "status": "PASS",
+  "mode": "prod",
+  "trigger": "Unmodified two-minute RefreshAuthToken timer",
+  "outageHttp": 502,
+  "afterRestartHttp": 200,
+  "draft": "Unsaved restart validation",
+  "draftPreserved": true,
+  "dialogs": 0
+}

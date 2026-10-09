@@ -1,0 +1,43 @@
+/home/yutaka/MSR_2026/mlatho/backend/openimis-be_py/.venv/lib/python3.12/site-packages/apscheduler/__init__.py:1: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import get_distribution, DistributionNotFound
+Load cfg {'location_types': ['R', 'D', 'W', 'V'], 'gql_query_locations_perms': ['121901'], 'gql_query_health_facilities_perms': ['121101'], 'gql_mutation_create_locations_perms': ['121902'], 'gql_mutation_edit_locations_perms': ['121903'], 'gql_mutation_delete_locations_perms': ['121904'], 'gql_mutation_move_location_perms': ['121905'], 'gql_mutation_create_region_locations_perms': ['121906'], 'gql_mutation_create_health_facilities_perms': ['121102'], 'gql_mutation_edit_health_facilities_perms': ['121103'], 'gql_mutation_delete_health_facilities_perms': ['121104'], 'gql_mutation_delete_micro_catchments_perms': ['159003'], 'import_micro_catchments_perms': ['159004'], 'export_micro_catchments_perms': ['159005'], 'gql_query_catchments_perms': ['121911'], 'gql_mutation_create_catchments_perms': ['121912'], 'gql_mutation_edit_catchments_perms': ['121913'], 'gql_mutation_delete_catchments_perms': ['121914'], 'no_location_check': False, 'health_facility_level': [{'code': 'D', 'display': 'Dispensary'}, {'code': 'C', 'display': 'Health Centre'}, {'code': 'H', 'display': 'Hospital'}], 'health_facility_contract_dates_mandatory': False}
+Isolated test admin created
+{
+  "MODE": "prod",
+  "DEBUG": false,
+  "IS_TESTING": false,
+  "CSRF_USE_SESSIONS": true,
+  "CSRF_COOKIE_SECURE": true,
+  "SESSION_COOKIE_SECURE": true,
+  "SESSION_COOKIE_AGE": 28800,
+  "CSRF_TRUSTED_ORIGINS": [
+    "http://localhost",
+    "http://localhost:8443",
+    "https://localhost",
+    "https://localhost:8443"
+  ],
+  "USE_X_FORWARDED_HOST": true,
+  "SECURE_PROXY_SSL_HEADER": [
+    "HTTP_X_FORWARDED_PROTO",
+    "https"
+  ],
+  "MIDDLEWARE": [
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "core.middleware.GraphQLRateLimitMiddleware",
+    "axes.middleware.AxesMiddleware",
+    "core.middleware.DefaultAxesAttributesMiddleware",
+    "core.middleware.AdminLogoutMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "simple_history.middleware.HistoryRequestMiddleware",
+    "core.middleware.SecurityHeadersMiddleware",
+    "csp.middleware.CSPMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware"
+  ]
+}
+Loaded core: /tmp/mlatho-auth-backend/core/__init__.py

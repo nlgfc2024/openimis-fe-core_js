@@ -1,0 +1,17 @@
+[
+  {
+    "path": "/tmp/mlatho-local-prod/frontend/build/index.html",
+    "sha256": "d915d07389cf2605912b2d8a2c7a5b78f0e325677105db8ddfd02131d8f35fc5",
+    "bytes": 645
+  },
+  {
+    "path": "/tmp/mlatho-local-prod/frontend/build/static/js/main.c35e4edd.js",
+    "sha256": "5f8714593809fe65c0a8e1721afa2fbe557f2407d5939650d042084c36ab739d",
+    "bytes": 8968625
+  },
+  {
+    "path": "/tmp/mlatho-auth-frontend/dist/index.es.js",
+    "sha256": "c21f2fef19df30b7ba8e7463b7e5fc525a1d8cf43c89933520ad0104e6448a2e",
+    "bytes": 602942
+  }
+]

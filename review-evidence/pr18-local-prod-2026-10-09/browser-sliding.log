@@ -1,0 +1,8 @@
+JWT renewal observation 30s
+JWT renewal observation 60s
+JWT renewal observation 90s
+JWT renewal observation 120s
+PASS unmodified two-minute tick renewed JWT before expiry
+JWT renewal observation 150s
+JWT renewal observation 180s
+{"name":"Periodic JWT sliding","status":"PASS","testTokenLifetimeSeconds":180,"productionTokenLifetimeSeconds":86400,"unmodifiedRefreshIntervalSeconds":120,"renewalHttp":200,"renewalDelaySeconds":-1,"expiryAdvancedSeconds":120,"pastOriginalExpiryHttp":200,"originalExpiredTokenHttp":401,"separateRefreshCookie":false}

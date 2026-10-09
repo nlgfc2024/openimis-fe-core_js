@@ -1,0 +1,68 @@
+[
+  {
+    "name": "JWT login and secure cookies",
+    "status": "PASS",
+    "detail": {
+      "authMode": "jwt",
+      "jwtSecondsRemaining": 86396,
+      "sessionSecondsRemaining": 28797,
+      "refreshCookie": false
+    },
+    "at": "2026-10-09T13:21:43.633Z"
+  },
+  {
+    "name": "Logout CSRF negative controls",
+    "status": "PASS",
+    "detail": {
+      "untrustedOrigin": 403,
+      "missingToken": 403,
+      "stillAuthenticated": true
+    },
+    "at": "2026-10-09T13:21:43.737Z"
+  },
+  {
+    "name": "Frontend JWT logout behind nginx",
+    "status": "PASS",
+    "detail": {
+      "status": 204,
+      "origin": "https://localhost:8443",
+      "anonymousReload": 401
+    },
+    "at": "2026-10-09T13:21:44.328Z"
+  },
+  {
+    "name": "Django admin session to frontend logout and reload",
+    "status": "PASS",
+    "detail": {
+      "authMode": "session",
+      "jwtAbsent": true,
+      "logout": 204,
+      "reload": 401
+    },
+    "at": "2026-10-09T13:21:48.536Z"
+  },
+  {
+    "name": "Expired CSRF session and prompt dismissal",
+    "status": "PASS",
+    "detail": {
+      "method": "Expire one PostgreSQL django_session row; keep JWT valid",
+      "error": "'csrftoken'",
+      "cancelReprompt": true,
+      "backdropReprompt": true,
+      "unsavedDraftPreserved": true
+    },
+    "at": "2026-10-09T13:21:55.427Z"
+  },
+  {
+    "name": "Confirmed expiry performs server logout",
+    "status": "PASS",
+    "detail": {
+      "logoutStatuses": [
+        403,
+        204
+      ],
+      "anonymousReload": 401
+    },
+    "at": "2026-10-09T13:21:55.867Z"
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "name": "Periodic JWT sliding",
+  "status": "PASS",
+  "testTokenLifetimeSeconds": 180,
+  "productionTokenLifetimeSeconds": 86400,
+  "unmodifiedRefreshIntervalSeconds": 120,
+  "renewalHttp": 200,
+  "renewalDelaySeconds": -1,
+  "expiryAdvancedSeconds": 120,
+  "pastOriginalExpiryHttp": 200,
+  "originalExpiredTokenHttp": 401,
+  "separateRefreshCookie": false
+}

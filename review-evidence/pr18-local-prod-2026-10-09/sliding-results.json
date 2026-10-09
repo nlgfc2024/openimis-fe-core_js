@@ -1,0 +1,13 @@
+{
+  "name": "Periodic JWT sliding",
+  "status": "PASS",
+  "testTokenLifetimeSeconds": 180,
+  "productionTokenLifetimeSeconds": 86400,
+  "unmodifiedRefreshIntervalSeconds": 120,
+  "renewalHttp": 200,
+  "expiryAdvancedSeconds": 120,
+  "pastOriginalExpiryHttp": 200,
+  "originalExpiredTokenHttp": 401,
+  "separateRefreshCookie": false,
+  "timingNote": "The raw delay telemetry included an anonymous boot refresh and is omitted here. The independently awaited post-login refresh passed the >=110-second delay assertion; JWT expiration advanced by 120 seconds."
+}

@@ -1,0 +1,10 @@
+Local test backend stopped
+
+Waiting for the real two-minute background check 2026-10-09T13:22:50.983Z
+Waiting for the real two-minute background check 2026-10-09T13:23:20.986Z
+Waiting for the real two-minute background check 2026-10-09T13:23:50.987Z
+Waiting for the real two-minute background check 2026-10-09T13:24:20.994Z
+PASS real background tick got 502; unsaved form retained
+Local test backend starting: 537525
+
+{"name":"Backend restart during unsaved form","status":"PASS","mode":"prod","trigger":"Unmodified two-minute RefreshAuthToken timer","outageHttp":502,"afterRestartHttp":200,"draft":"Unsaved restart validation","draftPreserved":true,"dialogs":0}

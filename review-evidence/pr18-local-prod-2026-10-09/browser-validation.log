@@ -1,0 +1,6 @@
+PASS JWT login and secure cookies {"authMode":"jwt","jwtSecondsRemaining":86396,"sessionSecondsRemaining":28797,"refreshCookie":false}
+PASS Logout CSRF negative controls {"untrustedOrigin":403,"missingToken":403,"stillAuthenticated":true}
+PASS Frontend JWT logout behind nginx {"status":204,"origin":"https://localhost:8443","anonymousReload":401}
+PASS Django admin session to frontend logout and reload {"authMode":"session","jwtAbsent":true,"logout":204,"reload":401}
+PASS Expired CSRF session and prompt dismissal {"method":"Expire one PostgreSQL django_session row; keep JWT valid","error":"'csrftoken'","cancelReprompt":true,"backdropReprompt":true,"unsavedDraftPreserved":true}
+PASS Confirmed expiry performs server logout {"logoutStatuses":[403,204],"anonymousReload":401}

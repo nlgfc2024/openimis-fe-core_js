@@ -1,0 +1,67 @@
+const {browser,context,current,login,base,credentials,assert,fs}=require('./common.cjs');
+const {execFileSync}=require('child_process');
+const root='/tmp/mlatho-local-prod';
+const results=[];
+function record(name,detail){results.push({name,status:'PASS',detail,at:new Date().toISOString()});console.log('PASS',name,JSON.stringify(detail));fs.writeFileSync(root+'/evidence/baseline-results.json',JSON.stringify(results,null,2));}
+const field=(p,name)=>p.locator('label').filter({hasText:new RegExp('^'+name+'[\\s\\u2009*]*$')}).locator('..').locator('input').first();
+(async()=>{
+ const b=await browser();let p;
+ try{
+  let c=await context(b);p=await c.newPage();
+  p.on('pageerror',e=>console.log('PAGE_ERROR',e.message));
+  await login(p);
+  const cookies=await c.cookies();const jwt=cookies.find(x=>x.name==='JWT');assert.ok(jwt);assert.ok(jwt.secure&&jwt.httpOnly);assert.equal(jwt.sameSite,'Lax');
+  const session=cookies.find(x=>x.name==='openimis_session');assert.ok(session.secure&&session.httpOnly);assert.equal(session.sameSite,'Lax');
+  assert.equal(cookies.some(x=>x.name==='JWT-refresh-token'),false);
+  const payload=JSON.parse(Buffer.from(jwt.value.split('.')[1],'base64url'));
+  record('JWT login and secure cookies',{authMode:'jwt',jwtSecondsRemaining:Math.round(payload.exp-Date.now()/1000),sessionSecondsRemaining:Math.round(session.expires-Date.now()/1000),refreshCookie:false});
+  const token=await p.evaluate(()=>localStorage.getItem('csrfToken'));
+  const deniedOrigin=await c.request.post(base+'/api/core/logout/',{headers:{Origin:'https://untrusted.invalid','X-CSRFToken':token}});
+  assert.equal(deniedOrigin.status(),403);
+  const deniedMissing=await c.request.post(base+'/api/core/logout/',{headers:{Origin:base}});
+  assert.equal(deniedMissing.status(),403);assert.equal((await current(p)).status,200);
+  record('Logout CSRF negative controls',{untrustedOrigin:403,missingToken:403,stillAuthenticated:true});
+  let done=p.waitForResponse(r=>r.url().endsWith('/api/core/logout/')&&r.request().method()==='POST');
+  await p.getByTitle('Log out',{exact:true}).click();let logout=await done;assert.equal(logout.status(),204);
+  assert.equal((await logout.request().allHeaders()).origin,base);
+  assert.equal((await c.cookies()).some(x=>['JWT','openimis_session'].includes(x.name)),false);
+  await p.reload();await p.locator('input[type="password"]').waitFor();assert.equal((await current(p)).status,401);
+  await p.screenshot({path:root+'/evidence/logout-anonymous.png'});
+  record('Frontend JWT logout behind nginx',{status:204,origin:base,anonymousReload:401});
+  await c.close();c=await context(b);p=await c.newPage();
+  await p.goto(base+'/api/admin/login/?next=/api/admin/');
+  await p.locator('#id_username').fill(credentials.username);await p.locator('#id_password').fill(credentials.password);
+  await p.locator('input[type="submit"]').click();await p.waitForURL('**/api/admin/');
+  assert.equal((await c.cookies()).some(x=>x.name==='JWT'),false);
+  await p.goto(base+'/front/');await p.getByTitle('Log out',{exact:true}).waitFor({timeout:30000});
+  assert.equal((await current(p)).body.authMode,'session');
+  await p.screenshot({path:root+'/evidence/admin-session-front.png'});
+  done=p.waitForResponse(r=>r.url().endsWith('/api/core/logout/')&&r.request().method()==='POST');
+  await p.getByTitle('Log out',{exact:true}).click();logout=await done;assert.equal(logout.status(),204);
+  await p.reload();await p.locator('input[type="password"]').waitFor();assert.equal((await current(p)).status,401);
+  record('Django admin session to frontend logout and reload',{authMode:'session',jwtAbsent:true,logout:204,reload:401});
+  await c.close();c=await context(b);p=await c.newPage();await login(p);
+  await p.goto(base+'/front/admin/users');await field(p,'Last name').waitFor({timeout:30000});
+  await field(p,'Last name').fill('Unsaved session expiry draft');
+  const sessionCookie=(await c.cookies()).find(x=>x.name==='openimis_session');
+  execFileSync('/home/yutaka/MSR_2026/mlatho/backend/openimis-be_py/.venv/bin/python',[root+'/db-control.py','expire-session'],{input:sessionCookie.value});
+  let messages=[];
+  p.on('response',async r=>{if(r.url().endsWith('/api/graphql')){try{const j=await r.json();if(j.errors) messages.push(...j.errors.map(x=>x.message));}catch{}}});
+  await p.getByRole('button',{name:'Apply Filters',exact:true}).click();
+  const dialog=p.getByRole('dialog',{name:'Session Expired'});await dialog.waitFor({timeout:30000});
+  assert.equal(await p.getByRole('dialog').count(),1);assert.ok(messages.includes("'csrftoken'"));
+  await p.screenshot({path:root+'/evidence/session-expired.png'});
+  await dialog.getByRole('button',{name:'Cancel',exact:true}).click();await dialog.waitFor({state:'hidden'});
+  assert.equal(await field(p,'Last name').inputValue(),'Unsaved session expiry draft');
+  await p.getByRole('button',{name:'Apply Filters',exact:true}).click();await dialog.waitFor({timeout:30000});
+  await p.mouse.click(10,10);await dialog.waitFor({state:'hidden'});
+  await p.getByRole('button',{name:'Apply Filters',exact:true}).click();await dialog.waitFor({timeout:30000});
+  record('Expired CSRF session and prompt dismissal',{method:'Expire one PostgreSQL django_session row; keep JWT valid',error:"'csrftoken'",cancelReprompt:true,backdropReprompt:true,unsavedDraftPreserved:true});
+  const logoutStatuses=[];p.on('response',r=>{if(r.url().endsWith('/api/core/logout/'))logoutStatuses.push(r.status())});
+  await dialog.getByRole('button',{name:/^ok$/i}).click();
+  await p.locator('input[type="password"]').waitFor({timeout:30000});assert.ok(logoutStatuses.includes(204));
+  await p.reload();await p.locator('input[type="password"]').waitFor();assert.equal((await current(p)).status,401);
+  record('Confirmed expiry performs server logout',{logoutStatuses,anonymousReload:401});
+ }catch(e){results.push({name:'RUN_FAILURE',status:'FAIL',error:e.stack});fs.writeFileSync(root+'/evidence/baseline-results.json',JSON.stringify(results,null,2));if(p){await p.screenshot({path:root+'/evidence/baseline-failure.png'});console.log((await p.locator('body').innerText()).slice(0,2500))}throw e}
+ finally{await b.close()}
+})().catch(e=>{console.error(e);process.exit(1)});
