@@ -232,6 +232,19 @@ export function graphqlMutation(mutation, variables, type = "CORE_TRIGGER_MUTATI
 
 import * as Sentry from "@sentry/react";
 
+function promptSessionExpiry() {
+  return (dispatch, getState) => {
+    const core = getState()?.core;
+    if (core?.isInitialized && core?.user && !core?.sessionExpiryPending) {
+      dispatch(coreConfirm(
+        "Session Expired",
+        "Your session has expired, You will be redirected to the login page.",
+        "csrf_logout",
+      ));
+    }
+  };
+}
+
 export function fetch(config) {
   const { silent = false, ...request } = config;
 
@@ -272,14 +285,7 @@ export function fetch(config) {
 
       // This is the sole owner of session UI; silent probes retain refresh cookies.
       if (actionRequiresAuthentication(action)) {
-        const core = getState()?.core;
-        if (!silent && core?.isInitialized && core?.user && !core?.sessionExpiryPending) {
-          dispatch(coreConfirm(
-            "Session Expired",
-            "Your session has expired, You will be redirected to the login page.",
-            "csrf_logout",
-          ));
-        }
+        if (!silent) dispatch(promptSessionExpiry());
         return action;
       }
       if (silent) return action;
@@ -483,25 +489,39 @@ export function refreshAuthToken(options = {}) {
   };
 }
 
+// Check password/session policy without resetting CSRF, then slide JWT expiry.
+// A Django-only session never needs a refresh-token mutation.
+export function refreshSession() {
+  return async (dispatch) => {
+    const session = await dispatch(loadUser({ silent: true }));
+    if (actionRequiresAuthentication(session)) {
+      dispatch(promptSessionExpiry());
+    } else if (!session?.error && !["session", "other"].includes(session?.payload?.authMode)) {
+      return dispatch(refreshAuthToken());
+    }
+    return session;
+  };
+}
+
 // The server accepts either a Django session or a JWT cookie. A refresh is only
 // attempted after an authentication failure, at most once per probe.
 export function restoreSession({ refreshCsrf = true } = {}) {
   return async (dispatch) => {
     let session = await dispatch(loadUser({ silent: true }));
-    if (actionRequiresAuthentication(session)) {
+    if (actionRequiresAuthentication(session) && session?.payload?.response?.detail !== "PASSWORD_EXPIRED") {
       const refresh = await dispatch(refreshAuthToken({ silent: true }));
       if (!refresh?.error && !refresh?.payload?.errors?.length && refresh?.payload?.data?.refreshToken) {
         session = await dispatch(loadUser({ silent: true }));
       }
     }
     if (actionRequiresAuthentication(session)) {
-      return dispatch(logout());
+      return dispatch(logout({ silent: true }));
     } else if (!session?.error && (refreshCsrf || !getCsrfToken())) {
       // Also required for CSRF_USE_SESSIONS and this fork's session CSRF check.
       const csrf = await dispatch(fetchCsrfToken(undefined, { silent: true }));
       const token = csrf?.payload?.data?.getCsrfToken?.csrfToken;
       if (token) storeCsrfToken(token);
-      if (actionRequiresAuthentication(csrf)) return dispatch(logout());
+      if (actionRequiresAuthentication(csrf)) return dispatch(logout({ silent: true }));
       if (!token) {
         // Do not silently mark boot ready for mutations without a session CSRF token.
         dispatch(authError({ status: csrf?.payload?.status, statusText: "Unable to obtain CSRF token" }));
@@ -531,28 +551,37 @@ export function authError(error) {
   };
 }
 
-export function logout() {
-  return async (dispatch, getState) => {
-    const mutation = `
-      mutation logout {
-        deleteTokenCookie {
-          deleted
-        }
-        deleteRefreshTokenCookie {
-          deleted
+export function logout({ silent = false } = {}) {
+  return async (dispatch) => {
+    const sendLogout = () => dispatch(fetch({
+      endpoint: `${baseApiUrl}/core/logout/`,
+      method: "POST",
+      silent: true,
+      types: ["CORE_SESSION_LOGOUT_REQ", "CORE_SESSION_LOGOUT_RESP", "CORE_SESSION_LOGOUT_ERR"],
+    }));
+    let response;
+    try {
+      response = await sendLogout();
+      if (response?.payload?.status === 403) {
+        // The Django CSRF session may have expired while its JWT is still valid.
+        // Fetch a fresh CSRF token once, then retry the protected logout endpoint.
+        const csrf = await dispatch(fetchCsrfToken(undefined, { silent: true }));
+        const token = csrf?.payload?.data?.getCsrfToken?.csrfToken;
+        if (token) {
+          storeCsrfToken(token);
+          response = await sendLogout();
         }
       }
-    `;
-    try {
-      await dispatch(graphqlWithVariables(mutation, {}, "CORE_AUTH_COOKIE_DELETE", {}, {}, { silent: true }));
     } catch (error) {
-      // Local logout must complete even when cookie deletion cannot reach the server.
-      Sentry.captureException(new Error("Unable to clear authentication cookies"));
-    } finally {
-      if (typeof localStorage !== "undefined") localStorage.removeItem("csrfToken");
-      dispatch({ type: "CORE_AUTH_LOGOUT" });
+      response = { error: true };
+      Sentry.captureException(new Error("Unable to end authentication session"));
     }
-    return { type: "CORE_AUTH_LOGOUT" };
+    if (response?.error && !silent) {
+      dispatch(coreAlert("Logout failed", "Your server session could not be ended. Please retry."));
+      return response;
+    }
+    if (typeof localStorage !== "undefined") localStorage.removeItem("csrfToken");
+    return dispatch({ type: "CORE_AUTH_LOGOUT" });
   };
 }
 

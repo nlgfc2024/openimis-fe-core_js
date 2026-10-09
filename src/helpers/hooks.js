@@ -5,7 +5,7 @@ import {
   login,
   logout,
   initialize,
-  refreshAuthToken,
+  refreshSession,
   graphqlWithVariables,
   graphqlMutation,
 } from "../actions";
@@ -159,7 +159,7 @@ export const useAuthentication = () => {
   const isInitialized = useSelector((state) => state.core.isInitialized);
   const error = useSelector((state) => state.core.authError);
   const refresh = async () => {
-    await dispatch(refreshAuthToken());
+    await dispatch(refreshSession());
   };
 
   return {

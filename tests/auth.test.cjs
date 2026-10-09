@@ -212,7 +212,7 @@ test('silent current-user 502 preserves loaded user, form state and fatal-error 
   assert.equal(store.getState().core, before);
   assert.equal(dialogs().length, 0);
 });
-test('periodic refresh renews JWT without calling current-user or requiring a separate refresh token', async () => {
+test('JWT refresh helper renews without requiring a separate refresh token', async () => {
   setup({ user: okUser, isInitialized: true });
   replies.push(() => ok({ data: { refreshToken: { refreshExpiresIn: 42 } } }));
   await store.dispatch(actions.refreshAuthToken());
@@ -238,4 +238,75 @@ test('expired production CSRF session KeyError prompts once and preserves caller
   for (const message of ['csrftoken', 'Cannot query field csrftoken', 'csrf', 'permission denied']) {
     assert.equal(api.isSessionError(200, [{ message }]), false);
   }
+});
+
+for (const authMode of ['session', 'jwt']) {
+  test(`periodic ${authMode} policy check refreshes only JWT credentials`, async () => {
+    setup({ user: okUser, isInitialized: true });
+    replies.push(() => ok({ ...okUser, authMode }));
+    if (authMode === 'jwt') replies.push(() => ok({ data: { refreshToken: { refreshExpiresIn: 42 } } }));
+    await store.dispatch(actions.refreshSession());
+    assert.match(requests[0].url, /current_user/);
+    assert.equal(requests.length, authMode === 'jwt' ? 2 : 1);
+    if (authMode === 'jwt') assert.match(requests[1].body, /refreshToken/);
+    assert.equal(dialogs().length, 0);
+  });
+}
+test('periodic policy probe during backend restart preserves unsaved work', async () => {
+  setup({ user: okUser, isInitialized: true, error: null, unsavedDraft: 'draft' });
+  const before = store.getState().core;
+  replies.push(() => reply(502, {}));
+  await store.dispatch(actions.refreshSession());
+  assert.equal(store.getState().core, before);
+  assert.equal(requests.length, 1);
+  assert.equal(dialogs().length, 0);
+});
+test('password expiry during use prompts once without renewing credentials', async () => {
+  setup({ user: okUser, isInitialized: true });
+  replies.push(() => reply(401, { detail: 'PASSWORD_EXPIRED' }), () => reply(401, { detail: 'PASSWORD_EXPIRED' }));
+  await store.dispatch(actions.refreshSession());
+  await store.dispatch(actions.refreshSession());
+  assert.equal(requests.length, 2);
+  assert.equal(dialogs().length, 1);
+  assert.equal(events.filter((a) => a.type === 'CORE_AUTH_LOGOUT').length, 0);
+});
+test('expired password on boot cleans up without attempting JWT renewal', async () => {
+  replies.push(() => reply(401, { detail: 'PASSWORD_EXPIRED' }), () => new Response(null, { status: 204 }));
+  await boot();
+  assert.equal(requests.length, 2);
+  assert.match(requests[1].url, /core\/logout\/$/);
+  assert.equal(store.getState().core.user, null);
+  assert.equal(dialogs().length, 0);
+});
+test('explicit logout clears server session before clearing local authentication', async () => {
+  setup({ user: okUser, isInitialized: true });
+  localStorage.setItem('csrfToken', 'session-token');
+  replies.push(() => new Response(null, { status: 204 }));
+  const result = await store.dispatch(actions.logout());
+  assert.equal(result.type, 'CORE_AUTH_LOGOUT');
+  assert.match(requests[0].url, /core\/logout\/$/);
+  assert.equal(requests[0].method, 'POST');
+  assert.equal(requests[0].headers['X-CSRFToken'], 'session-token');
+  assert.equal(store.getState().core.user, null);
+  assert.equal(localStorage.getItem('csrfToken'), null);
+});
+test('logout recovers expired CSRF session with one bootstrap and retry', async () => {
+  setup({ user: okUser, isInitialized: true });
+  replies.push(() => reply(403, {}), () => ok(csrf), () => new Response(null, { status: 204 }));
+  const result = await store.dispatch(actions.logout());
+  assert.equal(result.type, 'CORE_AUTH_LOGOUT');
+  assert.equal(requests.length, 3);
+  assert.equal(requests[2].headers['X-CSRFToken'], 'server-session-token');
+  assert.equal(dialogs().length, 0);
+});
+test('failed explicit logout retains authentication and asks user to retry', async () => {
+  setup({ user: okUser, isInitialized: true });
+  localStorage.setItem('csrfToken', 'keep-until-server-logout');
+  replies.push(() => reply(502, {}));
+  const result = await store.dispatch(actions.logout());
+  assert.equal(result.error, true);
+  assert.deepEqual(store.getState().core.user, okUser);
+  assert.equal(localStorage.getItem('csrfToken'), 'keep-until-server-logout');
+  assert.equal(dialogs().length, 1);
+  assert.equal(dialogs()[0].type, 'CORE_ALERT');
 });

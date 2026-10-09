@@ -41,8 +41,9 @@ export function getTimeDifferenceInDaysFromToday(dateToCheck) {
 }
 
 export const onLogout = async (dispatch) => {
-  localStorage.clear();
-  await dispatch(logout());
+  const result = await dispatch(logout());
+  if (result?.type === "CORE_AUTH_LOGOUT") localStorage.clear();
+  return result;
 };
 
 export const redirectToSamlLogout = (e) => {
