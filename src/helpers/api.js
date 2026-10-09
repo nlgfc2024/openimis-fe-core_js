@@ -211,3 +211,42 @@ export function formatSorter(orderBy, attr, asc) {
     );
   }
 }
+
+// Match the established failure, not generic permission or CSRF-related text.
+export const isSessionError = (status, errors = []) => status === 401 || errors.some(
+  (error) => {
+    const message = String(error?.message || "").trim().toLowerCase();
+    // The legacy production checker raises KeyError when the session expires.
+    return message === "csrf token missing or incorrect." || message === "'csrftoken'";
+  },
+);
+
+export const actionRequiresAuthentication = (action) => {
+  const payload = action?.payload;
+  return isSessionError(payload?.status ?? payload?.response?.status,
+    payload?.errors ?? payload?.response?.errors ?? []);
+};
+
+let sessionCsrf = null;
+let sessionCsrfCookie = null;
+
+function csrfCookie() {
+  const cookie = typeof document === "undefined" ? null : document.cookie
+    .split(";").map((part) => part.trim()).find((part) => part.startsWith("csrftoken="));
+  return cookie ? cookie.slice("csrftoken=".length) : null;
+}
+
+export function storeCsrfToken(token) {
+  // Mlatho's query gate compares the masked session token literally. Bind the
+  // server-issued token to this cookie; never reuse it after cookie rotation.
+  sessionCsrf = token;
+  sessionCsrfCookie = csrfCookie();
+  if (typeof localStorage !== "undefined") localStorage.setItem("csrfToken", token);
+}
+
+export function getCsrfToken() {
+  const cookie = csrfCookie();
+  const stored = typeof localStorage === "undefined" ? null : localStorage.getItem("csrfToken");
+  if (cookie) return sessionCsrf && stored === sessionCsrf && cookie === sessionCsrfCookie ? sessionCsrf : cookie;
+  return stored;
+}
