@@ -139,6 +139,12 @@ class SearcherPane extends Component {
                     onClick={a.action}
                     startIcon={a.icon}
                     label={a.label || ""}
+                    variant={a.variant}
+                    color={a.color}
+                    size={a.size}
+                    disabled={a.disabled}
+                    className={a.className}
+                    borderless={a.borderless}
                   />
                 ))}
               {!!reset && (
