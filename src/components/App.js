@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect, useState } from "react";
 import { connect, useDispatch } from "react-redux";
 import { IntlProvider } from "react-intl";
-import { Route, BrowserRouter, Switch } from "react-router-dom";
+import { Route, BrowserRouter, Switch, matchPath } from "react-router-dom";
 import { CssBaseline } from "@material-ui/core";
 import { withTheme, withStyles } from "@material-ui/core/styles";
 import withModulesManager, { ModulesManagerProvider } from "../helpers/modules";
@@ -111,7 +111,12 @@ const App = (props) => {
   );
 
   useEffect(() => {
-    auth.initialize();
+    const basePath = (basename || "").replace(/\/$/, "");
+    const publicPaths = ["login", "forgot_password", "set_password", ...unauthenticatedRoutes.map((route) => route.path)];
+    const publicRoute = publicPaths.some((path) => matchPath(location.pathname, {
+      path: `${basePath}/${path.replace(/^\//, "")}`, exact: true,
+    }));
+    auth.initialize({ publicRoute });
     if (process.env.NODE_ENV == "development") {
       // In development, redirect the browser to the basename if
       // the location is currently the root path

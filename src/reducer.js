@@ -69,12 +69,14 @@ function reducer(
       return {
         ...state,
         confirm: action.payload,
+        sessionExpiryPending: action.payload?.intent === "csrf_logout" || state.sessionExpiryPending,
         confirmed: null,
       };
     case "CORE_CONFIRM_CLEAR":
       var s = {
         ...state,
         confirmed: action.payload,
+        sessionExpiryPending: false,
       };
       delete s.confirm;
       return s;
@@ -92,8 +94,20 @@ function reducer(
       return {
         ...state,
         user: action.payload,
+        authError: null,
+        error: null,
+        sessionExpiryPending: false,
       };
+    case "CORE_USERS_CURRENT_USER_REQ":
+      return state;
     case "CORE_USERS_CURRENT_USER_ERR":
+      // A silent probe owns cleanup after its one permitted refresh attempt.
+      if ((action.payload?.status ?? action.payload?.response?.status) === 401) {
+        return action.meta?.silent ? state : { ...state, user: null, authError: null, error: null };
+      }
+      if ((action.payload?.status ?? action.payload?.response?.status) === 403) return state;
+      // Background outages must not unmount the authenticated app or lose edits.
+      if (action.meta?.silent && state.user) return state;
       return {
         ...state,
         error: {
@@ -406,6 +420,7 @@ function reducer(
       };
     }
     case "CORE_AUTH_ERR": {
+      if (action.meta?.silent) return state;
       return {
         ...state,
         user: null,
@@ -420,6 +435,10 @@ function reducer(
     case "CORE_AUTH_LOGOUT":
       return {
         ...state,
+        authError: null,
+        error: null,
+        confirm: null,
+        sessionExpiryPending: false,
         user: null,
         mutations: [],
         filtersCache: {},

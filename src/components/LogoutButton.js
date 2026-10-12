@@ -33,8 +33,8 @@ const LogoutButton = () => {
   };
 
   const redirectToImisLogout = async () => {
-    await onLogout(dispatch);
-    history.push("/");
+    const result = await onLogout(dispatch);
+    if (result?.type === "CORE_AUTH_LOGOUT") history.push("/");
   }
 
   const classes = useStyles();
