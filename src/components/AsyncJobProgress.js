@@ -31,7 +31,15 @@ const useStyles = makeStyles((theme) => ({
 
 const RUNNING_STATUSES = ["RECEIVED", "QUEUED", "RUNNING"];
 
-const AsyncJobProgress = ({ uuid, clientMutationId, actions }) => {
+const AsyncJobProgress = ({
+  uuid,
+  clientMutationId,
+  actions,
+  metricLabels,
+  progressUnit,
+  renderRunning,
+  renderResult,
+}) => {
   const classes = useStyles();
   const dispatch = useDispatch();
   const modulesManager = useModulesManager();
@@ -62,22 +70,30 @@ const AsyncJobProgress = ({ uuid, clientMutationId, actions }) => {
   const running = RUNNING_STATUSES.includes(job.status);
   const metrics = Object.entries(job.metrics ?? {});
 
+  if (running && renderRunning) {
+    return <div className={classes.container}>{renderRunning(job, { percent, cancel: onCancel, cancelling })}</div>;
+  }
+  if (isTerminal && renderResult) {
+    return <div className={classes.container}>{renderResult(job)}</div>;
+  }
+
   return (
     <Grid container className={classes.container} spacing={1} alignItems="center">
       <Grid item className={classes.progressGroup}>
         <Chip size="small" label={formatMessage(`asyncJob.status.${job.status}`)} />
         {percent !== null && (
           <Typography variant="body2">
-            {formatMessageWithValues("asyncJob.progress", {
+            {formatMessageWithValues(progressUnit ? "asyncJob.progressWithUnit" : "asyncJob.progress", {
               processed: job.processed,
               total: job.total,
               percent,
+              unit: progressUnit,
             })}
           </Typography>
         )}
         {metrics.length > 0 && (
           <Typography variant="body2" className={classes.metrics}>
-            {metrics.map(([name, value]) => `${name}: ${value}`).join(" · ")}
+            {metrics.map(([name, value]) => `${metricLabels?.[name] ?? name}: ${value}`).join(" · ")}
           </Typography>
         )}
       </Grid>
