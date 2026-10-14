@@ -616,6 +616,14 @@ export function clearAlert() {
   };
 }
 
+export function showPageFeedback(payload) {
+  return (dispatch) => dispatch({ type: "CORE_PAGE_FEEDBACK", payload });
+}
+
+export function clearPageFeedback() {
+  return (dispatch) => dispatch({ type: "CORE_PAGE_FEEDBACK_CLEAR" });
+}
+
 export function coreConfirm(title, message, intent = null, severity = "neutral") {
   return (dispatch) => {
     dispatch({ type: "CORE_CONFIRM", payload: { title, message, intent, severity } });

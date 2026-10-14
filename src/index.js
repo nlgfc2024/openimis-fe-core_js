@@ -55,6 +55,8 @@ import AdvancedFiltersDialog from "./components/dialogs/AdvancedFiltersDialog";
 import WarningBox from "./components/generics/WarningBox";
 import FeedbackBanner from "./components/generics/FeedbackBanner";
 import InfoBanner from "./components/generics/InfoBanner";
+import StatusChip from "./components/generics/StatusChip";
+import PageFeedbackBanner from "./components/generics/PageFeedbackBanner";
 import LoadingButton from "./components/generics/LoadingButton";
 import LoadingOverlay from "./components/generics/LoadingOverlay";
 import {
@@ -65,6 +67,8 @@ import {
   graphqlWithVariables,
   journalize,
   coreAlert,
+  showPageFeedback,
+  clearPageFeedback,
   coreConfirm,
   clearConfirm,
   fetchMutation,
@@ -246,6 +250,8 @@ export {
   prepareMutation,
   downloadExport,
   coreAlert,
+  showPageFeedback,
+  clearPageFeedback,
   coreConfirm,
   clearConfirm,
   clearCurrentPaginationPage,
@@ -301,6 +307,8 @@ export {
   WarningBox,
   FeedbackBanner,
   InfoBanner,
+  StatusChip,
+  PageFeedbackBanner,
   LoadingButton,
   LoadingOverlay,
   SelectInput,
