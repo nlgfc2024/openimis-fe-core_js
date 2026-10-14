@@ -41,6 +41,41 @@ const styles = (theme) => ({
   paperHeaderMessage: theme.paper.message,
   paperHeaderAction: {
     paddingInline: 5,
+    gap: theme.spacing(1),
+  },
+  resultsHeader: {
+    backgroundColor: theme.paper.header.backgroundColor,
+    color: theme.palette.primary.main,
+    minHeight: "36px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
+    gap: theme.spacing(1),
+    padding: theme.spacing(0.5, 2),
+    boxSizing: "border-box",
+  },
+  resultsTitleHeader: {
+    // Keep the title compact enough that a full desktop action group can remain on the same row.
+    // At narrower widths the header itself wraps instead of compressing the actions.
+    flex: "1 1 120px",
+    minWidth: 0,
+    fontSize: 19,
+  },
+  resultsActionsHeader: {
+    flex: "0 1 auto",
+    minWidth: 0,
+  },
+  resultsActions: {
+    display: "flex",
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    gap: theme.spacing(1),
+    "& .MuiButton-root": {
+      paddingLeft: theme.spacing(1.5),
+      paddingRight: theme.spacing(1.5),
+    },
   },
   tableHeaderAction: theme.table.headerAction,
   processing: {
@@ -54,17 +89,7 @@ const styles = (theme) => ({
     border: 0,
   },
   actionButtonWrapper: {
-    marginLeft: theme.spacing(1),
-  },
-  actionButton: {
-    minHeight: 42,
-    padding: theme.spacing(0.75, 2),
-    borderRadius: theme.shape.borderRadius,
-    whiteSpace: "nowrap",
-    "& .MuiTypography-root": {
-      fontWeight: 600,
-      letterSpacing: "0.02em",
-    },
+    display: "flex",
   },
   tableContainer: {
     ...theme.table.container,
@@ -475,7 +500,6 @@ class Searcher extends Component {
       action.authorized && (
         <Grid item key={`searcher-action-${idx}`} className={classes.actionButtonWrapper}>
           {action.render ? action.render({
-            className: classes.actionButton,
             size: action.size ?? "medium",
           }) : (
             <SearcherActionButton
@@ -486,7 +510,6 @@ class Searcher extends Component {
               color={action.color ?? "primary"}
               size={action.size ?? "medium"}
               disabled={action.disabled}
-              className={classes.actionButton}
               borderless={false}
             />
           )}
@@ -605,57 +628,55 @@ class Searcher extends Component {
               <ProgressOrError error={errorItems} />
             ) : (
               <Fragment>
-                <Grid container item alignItems="center" xs={this.isWorker ? 7 : 8} className={classes.paperHeader}>
-                  <Grid item xs={8} className={classes.paperHeaderTitle}>
+                <Grid container item xs={12} className={classes.resultsHeader}>
+                  <Grid item className={classes.resultsTitleHeader}>
                     <div className={classes.infoSection}>
                       {infoButtonContent && <InfoButton content={infoButtonContent} />}
-                      <Grid item>
+                      <div>
                         {!fetchingItems ? tableTitle : formatMessage(intl, "core", "table.resultsLoading")}
-                      </Grid>
+                      </div>
+                      <SelectionPane
+                        module={module}
+                        selectionMessage={selectionMessage}
+                        selection={this.state.selection}
+                      />
                     </div>
                   </Grid>
-                  <Grid item xs={4} className={classes.paperHeaderMessage}>
-                    <SelectionPane
-                      module={module}
-                      selectionMessage={selectionMessage}
-                      selection={this.state.selection}
-                    />
-                  </Grid>
-                </Grid>
-                <Grid container alignItems="center" item xs={this.isWorker ? 5 : 4} className={classes.paperHeader}>
                   {fetchedItems && (
-                    <Grid container direction="row" justify="flex-end" className={classes.paperHeaderAction}>
-                      {showHeaderActionButtons && this.renderSearcherActions()}
-                      <Grid item>
-                        <StyledSelectionMenu
-                          selectWithCheckbox={selectWithCheckbox}
-                          refetch={this.applyFilters}
-                          withSelection={withSelection}
-                          canSelectAll={canSelectAll}
-                          selection={this.state.selection}
-                          items={items}
-                          clearSelected={this.clearSelected}
-                          selectAll={this.selectAll}
-                          triggerAction={this.triggerAction}
-                          actions={actions}
-                          processing={processing}
-                          actionsContributionKey={actionsContributionKey}
-                          headerActionButtons={enableHeaderActionButtons}
-                          filters={this.state.filters}
-                          exportable={exportable}
-                          exportFetch={exportFetch}
-                          exportFields={exportFields}
-                          exportFieldsColumns={exportFieldsColumns}
-                          exportFieldLabel={exportFieldLabel}
-                          chooseExportableColumns={chooseExportableColumns}
-                          additionalExportFields={additionalExportFields}
-                          chooseFileFormat={chooseFileFormat}
-                          exportFileFormats={exportFileFormats}
-                          exportFileFormat={exportFileFormat}
-                          setExportFileFormat={setExportFileFormat}
-                          downloadWithIconButton={downloadWithIconButton || enableHeaderActionButtons}
-                          displayClearAllColsButton={displayClearAllColsButton}
-                        />
+                    <Grid item className={classes.resultsActionsHeader}>
+                      <Grid container className={classes.resultsActions}>
+                        {showHeaderActionButtons && this.renderSearcherActions()}
+                        <Grid item>
+                          <StyledSelectionMenu
+                            selectWithCheckbox={selectWithCheckbox}
+                            refetch={this.applyFilters}
+                            withSelection={withSelection}
+                            canSelectAll={canSelectAll}
+                            selection={this.state.selection}
+                            items={items}
+                            clearSelected={this.clearSelected}
+                            selectAll={this.selectAll}
+                            triggerAction={this.triggerAction}
+                            actions={actions}
+                            processing={processing}
+                            actionsContributionKey={actionsContributionKey}
+                            headerActionButtons={enableHeaderActionButtons}
+                            filters={this.state.filters}
+                            exportable={exportable}
+                            exportFetch={exportFetch}
+                            exportFields={exportFields}
+                            exportFieldsColumns={exportFieldsColumns}
+                            exportFieldLabel={exportFieldLabel}
+                            chooseExportableColumns={chooseExportableColumns}
+                            additionalExportFields={additionalExportFields}
+                            chooseFileFormat={chooseFileFormat}
+                            exportFileFormats={exportFileFormats}
+                            exportFileFormat={exportFileFormat}
+                            setExportFileFormat={setExportFileFormat}
+                            downloadWithIconButton={downloadWithIconButton || enableHeaderActionButtons}
+                            displayClearAllColsButton={displayClearAllColsButton}
+                          />
+                        </Grid>
                       </Grid>
                     </Grid>
                   )}

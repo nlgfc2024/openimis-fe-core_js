@@ -30,7 +30,7 @@ const styles = (theme) => ({
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: theme.spacing(0, 2),
+    padding: theme.spacing(0.5, 2),
   },
   panelDetails: {
     backgroundColor: theme.paper.body.backgroundColor,
@@ -38,7 +38,10 @@ const styles = (theme) => ({
     width: "100%",
     display: "block",
   },
-  panelTitle: theme.paper.title,
+  panelTitle: {
+    ...theme.paper.title,
+    fontSize: 20,
+  },
   paper: theme.paper.body,
   paperDivider: theme.paper.divider,
   paperHeaderAction: {
@@ -136,6 +139,12 @@ class SearcherPane extends Component {
                     onClick={a.action}
                     startIcon={a.icon}
                     label={a.label || ""}
+                    variant={a.variant}
+                    color={a.color}
+                    size={a.size}
+                    disabled={a.disabled}
+                    className={a.className}
+                    borderless={a.borderless}
                   />
                 ))}
               {!!reset && (

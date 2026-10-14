@@ -65,6 +65,15 @@ function reducer(
       var s = { ...state };
       delete s.alert;
       return s;
+    case "CORE_PAGE_FEEDBACK":
+      return {
+        ...state,
+        pageFeedback: action.payload,
+      };
+    case "CORE_PAGE_FEEDBACK_CLEAR":
+      var pageFeedbackState = { ...state };
+      delete pageFeedbackState.pageFeedback;
+      return pageFeedbackState;
     case "CORE_CONFIRM":
       return {
         ...state,

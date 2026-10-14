@@ -2,9 +2,6 @@ import React from "react";
 
 import { Typography, Button } from "@material-ui/core";
 
-import { useModulesManager } from "@openimis/fe-core";
-import { DEFAULT } from "../../constants";
-
 const SearcherActionButton = ({
   onClick,
   startIcon,
@@ -16,9 +13,6 @@ const SearcherActionButton = ({
   className,
   borderless = true,
 }) => {
-  const modulesManager = useModulesManager();
-  const isWorker = modulesManager.getConf("fe-core", "isWorker", DEFAULT.IS_WORKER);
-
   return (
     <Button
       variant={variant}
@@ -30,7 +24,7 @@ const SearcherActionButton = ({
       onClick={onClick}
       startIcon={startIcon}
     >
-      {label && <Typography variant={isWorker ? "body2" : "subtitle1"}>{label}</Typography>}
+      {label && <Typography variant="body2">{label}</Typography>}
     </Button>
   );
 };
