@@ -91,6 +91,16 @@ const styles = (theme) => ({
   actionButtonWrapper: {
     display: "flex",
   },
+  actionButton: {
+    minHeight: 42,
+    padding: theme.spacing(0.75, 2),
+    borderRadius: theme.shape.borderRadius,
+    whiteSpace: "nowrap",
+    "& .MuiTypography-root": {
+      fontWeight: 600,
+      letterSpacing: "0.02em",
+    },
+  },
   tableContainer: {
     ...theme.table.container,
     boxShadow: theme.shadows[2],
@@ -500,6 +510,7 @@ class Searcher extends Component {
       action.authorized && (
         <Grid item key={`searcher-action-${idx}`} className={classes.actionButtonWrapper}>
           {action.render ? action.render({
+            className: classes.actionButton,
             size: action.size ?? "medium",
           }) : (
             <SearcherActionButton
@@ -510,6 +521,7 @@ class Searcher extends Component {
               color={action.color ?? "primary"}
               size={action.size ?? "medium"}
               disabled={action.disabled}
+              className={classes.actionButton}
               borderless={false}
             />
           )}
