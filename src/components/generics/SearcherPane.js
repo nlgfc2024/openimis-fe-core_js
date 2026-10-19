@@ -39,6 +39,12 @@ const styles = (theme) => ({
     display: "block",
   },
   panelTitle: theme.paper.title,
+  compactPanelSummary: {
+    padding: theme.spacing(0.5, 2),
+  },
+  compactPanelTitle: {
+    fontSize: 20,
+  },
   paper: theme.paper.body,
   paperDivider: theme.paper.divider,
   paperHeaderAction: {
@@ -103,13 +109,14 @@ class SearcherPane extends Component {
       appliedFiltersRowStructure = null,
       setAppliedFiltersRowStructure = null,
       applyNumberCircle = null,
+      compactLayout = false,
     } = this.props;
 
     return (
       <Paper className={classes.paper}>
         <div className={classes.panel}>
-          <div className={classes.panelSummary}>
-            <Grid item xs className={classes.panelTitle}>
+          <div className={`${classes.panelSummary} ${compactLayout ? classes.compactPanelSummary : ""}`}>
+            <Grid item xs className={`${classes.panelTitle} ${compactLayout ? classes.compactPanelTitle : ""}`}>
               <FormattedMessage module={module} id={title} />
             </Grid>
             <Grid item className={classes.paperHeader}>
@@ -136,6 +143,12 @@ class SearcherPane extends Component {
                     onClick={a.action}
                     startIcon={a.icon}
                     label={a.label || ""}
+                    variant={a.variant}
+                    color={a.color}
+                    size={a.size}
+                    disabled={a.disabled}
+                    className={a.className}
+                    borderless={a.borderless}
                   />
                 ))}
               {!!reset && (
