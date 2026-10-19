@@ -30,7 +30,7 @@ const styles = (theme) => ({
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: theme.spacing(0.5, 2),
+    padding: theme.spacing(0, 2),
   },
   panelDetails: {
     backgroundColor: theme.paper.body.backgroundColor,
@@ -38,8 +38,11 @@ const styles = (theme) => ({
     width: "100%",
     display: "block",
   },
-  panelTitle: {
-    ...theme.paper.title,
+  panelTitle: theme.paper.title,
+  compactPanelSummary: {
+    padding: theme.spacing(0.5, 2),
+  },
+  compactPanelTitle: {
     fontSize: 20,
   },
   paper: theme.paper.body,
@@ -106,13 +109,14 @@ class SearcherPane extends Component {
       appliedFiltersRowStructure = null,
       setAppliedFiltersRowStructure = null,
       applyNumberCircle = null,
+      compactLayout = false,
     } = this.props;
 
     return (
       <Paper className={classes.paper}>
         <div className={classes.panel}>
-          <div className={classes.panelSummary}>
-            <Grid item xs className={classes.panelTitle}>
+          <div className={`${classes.panelSummary} ${compactLayout ? classes.compactPanelSummary : ""}`}>
+            <Grid item xs className={`${classes.panelTitle} ${compactLayout ? classes.compactPanelTitle : ""}`}>
               <FormattedMessage module={module} id={title} />
             </Grid>
             <Grid item className={classes.paperHeader}>

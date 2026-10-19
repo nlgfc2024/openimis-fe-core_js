@@ -594,6 +594,7 @@ class Searcher extends Component {
       displayClearAllColsButton,
       infoButtonContent = '',
       searcherActionsPosition = 'top-right',
+      compactLayout = false,
     } = this.props;
     const showHeaderActionButtons = enableHeaderActionButtons
       || (enableActionButtons && searcherActionsPosition === "header-right");
@@ -626,6 +627,7 @@ class Searcher extends Component {
             appliedFiltersRowStructure={appliedFiltersRowStructure}
             setAppliedFiltersRowStructure={setAppliedFiltersRowStructure}
             applyNumberCircle={applyNumberCircle}
+            compactLayout={compactLayout}
           />
         )}
         {!!contributionKey && <Contributions contributionKey={contributionKey} />}
@@ -640,7 +642,7 @@ class Searcher extends Component {
               <ProgressOrError error={errorItems} />
             ) : (
               <Fragment>
-                <Grid container item xs={12} className={classes.resultsHeader}>
+                {compactLayout ? <Grid container item xs={12} className={classes.resultsHeader}>
                   <Grid item className={classes.resultsTitleHeader}>
                     <div className={classes.infoSection}>
                       {infoButtonContent && <InfoButton content={infoButtonContent} />}
@@ -692,7 +694,63 @@ class Searcher extends Component {
                       </Grid>
                     </Grid>
                   )}
-                </Grid>
+                </Grid> : <Fragment>
+                  <Grid container item alignItems="center" xs={this.isWorker ? 7 : 8} className={classes.paperHeader}>
+                    <Grid item xs={8} className={classes.paperHeaderTitle}>
+                      <div className={classes.infoSection}>
+                        {infoButtonContent && <InfoButton content={infoButtonContent} />}
+                        <Grid item>
+                          {!fetchingItems ? tableTitle : formatMessage(intl, "core", "table.resultsLoading")}
+                        </Grid>
+                      </div>
+                    </Grid>
+                    <Grid item xs={4} className={classes.paperHeaderMessage}>
+                      <SelectionPane
+                        module={module}
+                        selectionMessage={selectionMessage}
+                        selection={this.state.selection}
+                      />
+                    </Grid>
+                  </Grid>
+                  {fetchedItems && (
+                    <Grid container alignItems="center" item xs={this.isWorker ? 5 : 4} className={classes.paperHeader}>
+                      <Grid container direction="row" justify="flex-end" className={classes.paperHeaderAction}>
+                        {showHeaderActionButtons && this.renderSearcherActions()}
+                        <Grid item>
+                          <StyledSelectionMenu
+                            selectWithCheckbox={selectWithCheckbox}
+                            refetch={this.applyFilters}
+                            withSelection={withSelection}
+                            canSelectAll={canSelectAll}
+                            selection={this.state.selection}
+                            items={items}
+                            clearSelected={this.clearSelected}
+                            selectAll={this.selectAll}
+                            triggerAction={this.triggerAction}
+                            actions={actions}
+                            processing={processing}
+                            actionsContributionKey={actionsContributionKey}
+                            headerActionButtons={enableHeaderActionButtons}
+                            filters={this.state.filters}
+                            exportable={exportable}
+                            exportFetch={exportFetch}
+                            exportFields={exportFields}
+                            exportFieldsColumns={exportFieldsColumns}
+                            exportFieldLabel={exportFieldLabel}
+                            chooseExportableColumns={chooseExportableColumns}
+                            additionalExportFields={additionalExportFields}
+                            chooseFileFormat={chooseFileFormat}
+                            exportFileFormats={exportFileFormats}
+                            exportFileFormat={exportFileFormat}
+                            setExportFileFormat={setExportFileFormat}
+                            downloadWithIconButton={downloadWithIconButton || enableHeaderActionButtons}
+                            displayClearAllColsButton={displayClearAllColsButton}
+                          />
+                        </Grid>
+                      </Grid>
+                    </Grid>
+                  )}
+                </Fragment>}
                 <Divider />
                 <Grid item xs={12}>
                   <Table
