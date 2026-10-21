@@ -66,6 +66,21 @@ const styles = (theme) => ({
   },
 });
 
+const pixelWidth = (width) => {
+  if (typeof width === 'number') return width;
+  const match = /^([0-9]+(?:\.[0-9]+)?)px$/.exec(width || '');
+  return match ? Number(match[1]) : 0;
+};
+
+const columnWidthStyle = (columnWidth, flexWidth) => {
+  if (typeof columnWidth !== 'object') return columnWidth ? { width: columnWidth } : undefined;
+  return {
+    ...(columnWidth.width && { width: columnWidth.width }),
+    ...(columnWidth.flex && flexWidth && { width: flexWidth }),
+    ...(columnWidth.minWidth && { minWidth: columnWidth.minWidth }),
+  };
+};
+
 class Table extends Component {
   state = {
     selection: {},
@@ -255,6 +270,21 @@ class Table extends Component {
     if (hasColumnWidths && selectWithCheckbox && withSelection) {
       localColumnWidths.unshift(undefined);
     }
+    const tableMinWidth = localColumnWidths.reduce(
+      (minWidth, width) => minWidth + pixelWidth(
+        typeof width === 'object' ? width.minWidth || width.width : width,
+      ),
+      0,
+    );
+    const flexibleColumnCount = localColumnWidths.filter((width) => width?.flex).length;
+    const percentageWidth = localColumnWidths.reduce((total, width) => {
+      const percentage = typeof width === 'object' ? width.width : width;
+      const match = /^([0-9]+(?:\.[0-9]+)?)%$/.exec(percentage || '');
+      return match ? total + Number(match[1]) : total;
+    }, 0);
+    const flexWidth = flexibleColumnCount > 0
+      ? `${Math.max(0, 100 - percentageWidth) / flexibleColumnCount}%`
+      : null;
     return (
       <Box position="relative" overflow="auto">
         {header && (
@@ -279,12 +309,14 @@ class Table extends Component {
         <MUITable
           className={classes.table}
           size={size}
-          style={localColumnWidths.length ? { tableLayout: "fixed" } : undefined}
+          style={localColumnWidths.length
+            ? { tableLayout: "fixed", ...(tableMinWidth > 0 && { minWidth: tableMinWidth }) }
+            : undefined}
         >
           {localColumnWidths.length > 0 && (
             <colgroup>
               {localColumnWidths.map((width, index) => (
-                <col key={`col-${index}`} style={width ? { width } : undefined} />
+                <col key={`col-${index}`} style={columnWidthStyle(width, flexWidth)} />
               ))}
             </colgroup>
           )}
