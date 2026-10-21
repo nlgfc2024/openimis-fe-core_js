@@ -186,6 +186,7 @@ class Table extends Component {
       headerSpans = [],
       headerActions = [],
       colSpans = [],
+      columnWidths = [],
       items,
       itemFormatters,
       rowHighlighted = null,
@@ -215,6 +216,8 @@ class Table extends Component {
     let localHeaders = [...(headers || [])];
     let localPreHeaders = !!preHeaders ? [...preHeaders] : null;
     let localItemFormatters = [...itemFormatters];
+    let localColumnWidths = [...columnWidths];
+    const hasColumnWidths = localColumnWidths.length > 0;
     var i = !!headers && headers.length;
     while (localHeaders && i--) {
       if (modulesManager?.hideField(module, localHeaders[i])) {
@@ -223,6 +226,7 @@ class Table extends Component {
         if (!!headerSpans && headerSpans.length > i) headerSpans.splice(i, 1);
         if (!!headerActions && headerActions.length > i) headerActions.splice(i, 1);
         if (!!colSpans && colSpans.length > i) colSpans.splice(i, 1);
+        if (localColumnWidths.length > i) localColumnWidths.splice(i, 1);
         localHeaders.splice(i, 1);
         localItemFormatters.splice(i, 1);
       }
@@ -246,6 +250,10 @@ class Table extends Component {
 
     if (showOrdinalNumber) {
       localHeaders.unshift("core.Table.ordinalNumberHeader");
+      if (hasColumnWidths) localColumnWidths.unshift(undefined);
+    }
+    if (hasColumnWidths && selectWithCheckbox && withSelection) {
+      localColumnWidths.unshift(undefined);
     }
     return (
       <Box position="relative" overflow="auto">
@@ -268,7 +276,18 @@ class Table extends Component {
           </Grid>
         )}
         <Divider />
-        <MUITable className={classes.table} size={size}>
+        <MUITable
+          className={classes.table}
+          size={size}
+          style={localColumnWidths.length ? { tableLayout: "fixed" } : undefined}
+        >
+          {localColumnWidths.length > 0 && (
+            <colgroup>
+              {localColumnWidths.map((width, index) => (
+                <col key={`col-${index}`} style={width ? { width } : undefined} />
+              ))}
+            </colgroup>
+          )}
           {!!localPreHeaders && localPreHeaders.length > 0 && (
             <TableHead>
               <TableRow>

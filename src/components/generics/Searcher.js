@@ -551,6 +551,7 @@ class Searcher extends Component {
       preHeaders = null,
       headers = null,
       aligns = null,
+      columnWidths = [],
       items,
       itemsPageInfo,
       fetchingItems,
@@ -762,6 +763,7 @@ class Searcher extends Component {
                     headers={headers(this.state.filters)}
                     headerActions={this.headerActions(this.state.filters)}
                     aligns={!!aligns && aligns()}
+                    columnWidths={columnWidths}
                     itemFormatters={itemFormatters(this.state.filters)}
                     rowLocked={(i) => rowLocked(this.state.selection, i)}
                     rowHighlighted={(i) => rowHighlighted(this.state.selection, i)}
