@@ -76,15 +76,12 @@ class Form extends Component {
       contributedPanelsKey = null,
       additionalTooltips = null,
       enableActionButtons = false,
+      flat = false,
       ...others
     } = this.props;
     const readOnly = !!this.props.readOnly;
     const showInlineSaveButton =
-      enableSaveButton &&
-      saveButtonVariant === "inline" &&
-      !!save &&
-      !readOnly &&
-      (!!this.state.dirty || !!openDirty);
+      enableSaveButton && saveButtonVariant === "inline" && !!save && !readOnly && (!!this.state.dirty || !!openDirty);
     const inlineSaveLabel = saveButtonLabel
       ? formatMessage(this.props.intl, module, saveButtonLabel)
       : saveTooltip || formatMessage(this.props.intl, module, "saveTooltip");
@@ -112,7 +109,7 @@ class Form extends Component {
                 onClick={(e) => this.save(this.props.edited)}
               >
                 <SaveIcon />
-            </Fab>
+              </Fab>
             )}
           </span>
         ),
@@ -129,18 +126,18 @@ class Form extends Component {
         ),
         tooltip: fabTooltip,
       },
-    ]
+    ];
 
     const allTooltips = [...(additionalTooltips || []), ...defaultTooltips];
 
-    const filteredTooltips = allTooltips.filter(tooltip => tooltip.condition);
+    const filteredTooltips = allTooltips.filter((tooltip) => tooltip.condition);
 
     return (
       <Fragment>
         <form noValidate autoComplete="off">
           <Grid container>
             <Grid item xs={12}>
-              <Paper className={classes.paper}>
+              <Paper className={classes.paper} elevation={flat ? 0 : 1}>
                 <Grid container alignItems="center" direction="row" className={classes.paperHeader}>
                   <Grid item xs={8}>
                     <Grid container alignItems="center">
