@@ -25,9 +25,14 @@ const PUBLIC_PAGE_CONTRIBUTION_KEY = "core.PublicPage";
 const PublicPageMiddleware = ({ isAuthenticated, logo }) => {
   const modulesManager = useModulesManager();
   const enablePublicPage = modulesManager.getConf("fe-core", "App.enablePublicPage", DEFAULT.ENABLE_PUBLIC_PAGE);
+  const defaultAuthenticatedRoute = modulesManager.getConf(
+    "fe-core",
+    "App.defaultAuthenticatedRoute",
+    "/home",
+  );
 
   if (isAuthenticated || !enablePublicPage) {
-    return <Redirect to="/home" />;
+    return <Redirect to={defaultAuthenticatedRoute} />;
   }
 
   return <Contributions contributionKey={PUBLIC_PAGE_CONTRIBUTION_KEY} isAuthenticated={isAuthenticated} logo={logo} />;
