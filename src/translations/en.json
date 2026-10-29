@@ -254,5 +254,6 @@
   "core.back.buttonText": "Back",
   "roleManagement.editButton.buttonText": "Edit",
   "roleManagement.duplicateButton.buttonText": "Duplicate",
-  "roleManagement.deleteButton.buttonText": "Delete"
+  "roleManagement.deleteButton.buttonText": "Delete",
+  "advancedFilters.district_id": "Location – District (R)"
 }
