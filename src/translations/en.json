@@ -255,5 +255,6 @@
   "roleManagement.editButton.buttonText": "Edit",
   "roleManagement.duplicateButton.buttonText": "Duplicate",
   "roleManagement.deleteButton.buttonText": "Delete",
-  "advancedFilters.district_id": "Location – District (R)"
+  "core.advancedFilters.district_id": "Location – District (R)",
+  "core.advancedFilters.districtEquals": "Equals"
 }
