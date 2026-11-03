@@ -504,7 +504,7 @@ class Searcher extends Component {
   };
 
   renderSearcherActions = () => {
-    const { searcherActions, classes } = this.props;
+    const { searcherActions = [], classes } = this.props;
 
     return searcherActions.map((action, idx) =>
       action.authorized && (
