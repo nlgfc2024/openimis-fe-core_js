@@ -10,9 +10,6 @@ import FormattedMessage from "../generics/FormattedMessage";
 import TextInput from "./TextInput";
 
 const styles = (theme) => ({
-  label: {
-    color: theme.palette.primary.main,
-  },
   formControl: {
     position: "relative",
   },
@@ -82,7 +79,7 @@ class SelectInput extends Component {
       <Fragment>
         {!readOnly && (
           <FormControl required={required} fullWidth className={classes.formControl}>
-            <InputLabel shrink={true} className={classes.label}>
+            <InputLabel shrink={value !== null && value !== undefined && value !== ""}>
               {strLabel ?? <FormattedMessage module={module} id={label} />}
             </InputLabel>
             <Select

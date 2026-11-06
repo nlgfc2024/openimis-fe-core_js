@@ -13,6 +13,11 @@ const styles = (theme) => ({
 });
 
 const defaultGetOptionSelected = (option, v) => option.id === v?.id;
+const hasValue = (value) => (
+  Array.isArray(value)
+    ? value.length > 0
+    : value !== null && value !== undefined && value !== ""
+);
 
 const Autocomplete = (props) => {
   const {
@@ -108,7 +113,10 @@ const Autocomplete = (props) => {
                 {...inputProps}
                 variant="standard"
                 required={required}
-                InputLabelProps={{ shrink: value !== undefined }}
+                InputLabelProps={{
+                  ...inputProps.InputLabelProps,
+                  shrink: hasValue(value),
+                }}
                 label={withLabel && (label || formatMessage("label"))}
                 placeholder={!readOnly && withPlaceholder && (placeholder || formatMessage("placeholder"))}
               />
