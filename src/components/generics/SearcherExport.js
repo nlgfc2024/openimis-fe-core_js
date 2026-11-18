@@ -76,13 +76,28 @@ function SearcherExport(props) {
       .map((f) => filters[f]["filter"]);
 
     const additionalFilters = Object.entries(additionalFields || {}).map(([key, value]) => `${key}: "${value}"`);
-
-    const parameters = [...defaultFilters, ...additionalFilters];
+    const optionParameters = exportOption?.parameters || [];
+    const optionArgumentNames = new Set(
+      optionParameters
+        .map((parameter) => parameter.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*:/)?.[1])
+        .filter(Boolean),
+    );
+    // An export option can deliberately override an existing page filter. For
+    // KYC this is the Phase selected in the dialog; sending both values creates
+    // an invalid GraphQL request with two `benefitPlanId` arguments.
+    const isOverriddenByOption = (parameter) => {
+      const name = parameter.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*:/)?.[1];
+      return name && optionArgumentNames.has(name);
+    };
+    const parameters = [
+      ...defaultFilters.filter((parameter) => !isOverriddenByOption(parameter)),
+      ...additionalFilters.filter((parameter) => !isOverriddenByOption(parameter)),
+    ];
 
     parameters.push(`fileFormat: "${exportFileFormat}"`);
     parameters.push(`fields: ${JSON.stringify(fields)}`);
     parameters.push(`fieldsColumns: "${JSON.stringify(columns).replace(/\"/g, '\\"')}"`);
-    parameters.push(...(exportOption?.parameters || []));
+    parameters.push(...optionParameters);
     exportFetch(parameters);
   };
 
