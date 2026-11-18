@@ -17,7 +17,6 @@ import GetAppIcon from "@material-ui/icons/GetApp";
 
 import { closeExportConfigDialog, openExportConfigDialog } from "../../actions";
 import { EXPORT_FILE_FORMATS } from "../../constants";
-import { decodeId } from "../../helpers/api";
 import { formatMessage } from "../../helpers/i18n";
 import ExportConfigDialog from "../dialogs/ExportConfigDialog";
 import SearcherActionButton from "./SearcherActionButton";
@@ -59,11 +58,16 @@ function SearcherExport(props) {
   const [exportStatus, setExport] = useState(0);
   const [exportOptionDialogOpen, setExportOptionDialogOpen] = useState(false);
   const [selectedExportOption, setSelectedExportOption] = useState(null);
-  const [selectedPhase, setSelectedPhase] = useState(null);
+  const [selectedOptionValue, setSelectedOptionValue] = useState(null);
   const dispatch = useDispatch();
   const isExportConfigDialogOpen = useSelector((state) => state.core?.isExportConfigDialogOpen);
 
   const enabled = (selection) => (selectWithCheckbox ? !selection?.length && exportStatus === 0 : exportStatus === 0);
+
+  const optionParameters = (exportOption) => [
+    ...(exportOption?.parameters || []),
+    ...(exportOption?.getParameters?.(selectedOptionValue) || []),
+  ];
 
   const exportData = (
     fields = exportFields,
@@ -76,9 +80,9 @@ function SearcherExport(props) {
       .map((f) => filters[f]["filter"]);
 
     const additionalFilters = Object.entries(additionalFields || {}).map(([key, value]) => `${key}: "${value}"`);
-    const optionParameters = exportOption?.parameters || [];
+    const exportOptionParameters = optionParameters(exportOption);
     const optionArgumentNames = new Set(
-      optionParameters
+      exportOptionParameters
         .map((parameter) => parameter.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*:/)?.[1])
         .filter(Boolean),
     );
@@ -97,7 +101,7 @@ function SearcherExport(props) {
     parameters.push(`fileFormat: "${exportFileFormat}"`);
     parameters.push(`fields: ${JSON.stringify(fields)}`);
     parameters.push(`fieldsColumns: "${JSON.stringify(columns).replace(/\"/g, '\\"')}"`);
-    parameters.push(...optionParameters);
+    parameters.push(...exportOptionParameters);
     exportFetch(parameters);
   };
 
@@ -110,12 +114,22 @@ function SearcherExport(props) {
       setSelectedExportOption(exportOption);
       dispatch(openExportConfigDialog());
     } else {
-      exportData(exportFields, exportFieldsColumns, additionalExportFields, exportOption);
+      exportData(
+        exportOption?.fields || exportFields,
+        exportOption?.columns || exportFieldsColumns,
+        exportOption?.additionalFields ?? additionalExportFields,
+        exportOption,
+      );
     }
   };
 
   const handleColumnFiltering = (fields, columns) => {
-    exportData(fields, columns, additionalExportFields, selectedExportOption);
+    exportData(
+      fields,
+      columns,
+      selectedExportOption?.additionalFields ?? additionalExportFields,
+      selectedExportOption,
+    );
   };
 
   const configuredFields = selectedExportOption?.fields || exportFields;
@@ -141,7 +155,7 @@ function SearcherExport(props) {
     {
       text: label || formatMessage(intl, "core", "exportSearchResult"),
       icon: <GetAppIcon />,
-      action: handleExportData,
+      action: () => handleExportData(),
     },
   ];
 
@@ -163,31 +177,36 @@ function SearcherExport(props) {
           displayClearAllColsButton={displayClearAllColsButton}
         />
       )}
-      {exportOptions?.length && (
+      {exportOptions?.length > 0 && (
         <Dialog open={exportOptionDialogOpen} onClose={() => setExportOptionDialogOpen(false)} fullWidth maxWidth="xs">
           <DialogTitle>{label || formatMessage(intl, "core", "exportSearchResult")}</DialogTitle>
           <DialogContent>
             <Select
               fullWidth
               displayEmpty
-              value={selectedExportOption?.label || ""}
-              onChange={(event) => setSelectedExportOption(
-                exportOptions.find((option) => option.label === event.target.value) || null,
-              )}
+              value={selectedExportOption?.id || ""}
+              onChange={(event) => {
+                setSelectedExportOption(
+                  exportOptions.find((option) => option.id === event.target.value) || null,
+                );
+                setSelectedOptionValue(null);
+              }}
             >
-              <MenuItem value="" disabled>Select export type</MenuItem>
+              <MenuItem value="" disabled>
+                {formatMessage(intl, "core", "exportOptions.selectType")}
+              </MenuItem>
               {exportOptions.map((option) => (
-                <MenuItem key={option.label} value={option.label}>{option.label}</MenuItem>
+                <MenuItem key={option.id} value={option.id}>{option.label}</MenuItem>
               ))}
             </Select>
-            {selectedExportOption?.requiresPhase && (
+            {selectedExportOption?.picker && (
               <PublishedComponent
-                pubRef="socialProtection.BenefitPlanPicker"
-                type="GROUP"
+                pubRef={selectedExportOption.picker.pubRef}
+                {...(selectedExportOption.picker.props || {})}
                 withLabel
-                label="Phase"
-                value={selectedPhase}
-                onChange={setSelectedPhase}
+                label={selectedExportOption.picker.label}
+                value={selectedOptionValue}
+                onChange={setSelectedOptionValue}
               />
             )}
           </DialogContent>
@@ -198,19 +217,10 @@ function SearcherExport(props) {
             <Button
               color="primary"
               variant="contained"
-              disabled={!selectedExportOption || (selectedExportOption.requiresPhase && !selectedPhase)}
+              disabled={!selectedExportOption || (selectedExportOption.picker?.required && !selectedOptionValue)}
               onClick={() => {
                 setExportOptionDialogOpen(false);
-                // The picker returns a Relay global ID, while the group
-                // export's benefitPlanId filter expects the underlying UUID.
-                const phaseId = decodeId(selectedPhase.id);
-                handleExportData({
-                  ...selectedExportOption,
-                  parameters: [
-                    ...(selectedExportOption.parameters || []),
-                    ...(selectedExportOption.requiresPhase ? [`benefitPlanId: "${phaseId}"`] : []),
-                  ],
-                });
+                handleExportData(selectedExportOption);
               }}
             >
               {formatMessage(intl, "core", "exportConfigDialog.confirmButton")}

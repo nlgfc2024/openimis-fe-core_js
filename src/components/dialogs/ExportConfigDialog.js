@@ -42,7 +42,7 @@ const ExportConfigDialog = ({
   const modulesManager = useModulesManager();
   const { formatMessage } = useTranslations(module, modulesManager);
   const [columnBoolValues, setColumnBoolValues] = useState({});
-  const columnKeys = Object.keys(columns).join("|");
+  const columnKeys = JSON.stringify(Object.keys(columns));
 
   useEffect(() => {
     // The same dialog serves several export types. Reset the checklist when
