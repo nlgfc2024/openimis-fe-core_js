@@ -167,6 +167,7 @@
   "core.exportConfigDialog.title": "Export configuration",
   "core.exportConfigDialog.selectColumns": "Select columns you want to export: ",
   "core.exportConfigDialog.selectFormat": "Select file format:",
+  "core.exportOptions.selectType": "Select export type",
   "core.NotFoundPage.title": "Page not found",
   "core.NotFoundPage.description": "The requested URL was not found on this server.",
   "core.ErrorPage.back": "Move back to the home page",

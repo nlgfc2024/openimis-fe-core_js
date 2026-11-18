@@ -168,6 +168,7 @@ class SelectionMenu extends Component {
             setExportFileFormat={this.props.setExportFileFormat}
             downloadWithIconButton={this.props.downloadWithIconButton || this.props.headerActionButtons}
             displayClearAllColsButton={this.props.displayClearAllColsButton}
+            exportOptions={this.props.exportOptions}
           />
         )}
         {!!contributionKey && (
@@ -215,6 +216,7 @@ class SelectionMenu extends Component {
               exportFileFormats={this.props.exportFileFormats}
               downloadWithIconButton={this.props.downloadWithIconButton}
               displayClearAllColsButton={this.props.displayClearAllColsButton}
+              exportOptions={this.props.exportOptions}
             />
           )}
           {!!contributionKey && (
@@ -583,6 +585,7 @@ class Searcher extends Component {
       showOrdinalNumber = false,
       chooseExportableColumns = false,
       additionalExportFields,
+      exportOptions,
       chooseFileFormat = false,
       exportFileFormats = {},
       exportFileFormat,
@@ -690,6 +693,7 @@ class Searcher extends Component {
                             setExportFileFormat={setExportFileFormat}
                             downloadWithIconButton={downloadWithIconButton || enableHeaderActionButtons}
                             displayClearAllColsButton={displayClearAllColsButton}
+                            exportOptions={exportOptions}
                           />
                         </Grid>
                       </Grid>
@@ -746,6 +750,7 @@ class Searcher extends Component {
                             setExportFileFormat={setExportFileFormat}
                             downloadWithIconButton={downloadWithIconButton || enableHeaderActionButtons}
                             displayClearAllColsButton={displayClearAllColsButton}
+                            exportOptions={exportOptions}
                           />
                         </Grid>
                       </Grid>

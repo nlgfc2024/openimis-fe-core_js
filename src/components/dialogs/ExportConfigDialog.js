@@ -42,13 +42,14 @@ const ExportConfigDialog = ({
   const modulesManager = useModulesManager();
   const { formatMessage } = useTranslations(module, modulesManager);
   const [columnBoolValues, setColumnBoolValues] = useState({});
+  const columnKeys = JSON.stringify(Object.keys(columns));
 
   useEffect(() => {
-    if (Object.keys(columnBoolValues).length === 0) {
-      const newColumnBoolValues = Object.fromEntries(Object.keys(columns).map((key) => [key, true]));
-      setColumnBoolValues(newColumnBoolValues);
-    }
-  }, [columnBoolValues, columns]);
+    // The same dialog serves several export types. Reset the checklist when
+    // their field set changes; otherwise a prior household export can retain
+    // its columns when the user selects the KYC export, dropping Phase.
+    setColumnBoolValues(Object.fromEntries(Object.keys(columns).map((key) => [key, true])));
+  }, [columnKeys]);
 
   const handleCheckboxChange = (key, checked) => {
     setColumnBoolValues({ ...columnBoolValues, [key]: checked });
