@@ -1,0 +1,19 @@
+name: Module CI
+# Builds the Malawi frontend with this module from the PR. The steps live in one shared
+# workflow on the FE hub, so CI fixes are made there once:
+# https://github.com/nlgfc2024/openimis-fe_js/blob/mw/develop/.github/workflows/module-ci-build.yml
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - mw/develop
+      - jobs-now/develop
+      - umep/develop
+      - 'release/mw/**'
+  workflow_dispatch:
+
+jobs:
+  call:
+    name: Malawi CI
+    uses: nlgfc2024/openimis-fe_js/.github/workflows/module-ci-build.yml@mw/develop
