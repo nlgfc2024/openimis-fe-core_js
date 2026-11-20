@@ -34,7 +34,7 @@ const Autocomplete = (props) => {
     getOptionSelected = defaultGetOptionSelected,
     filterSelectedOptions,
     placeholder,
-    onInputChange,
+    onInputChange = () => {},
     setCurrentString,
     multiple = false,
     renderInput,
