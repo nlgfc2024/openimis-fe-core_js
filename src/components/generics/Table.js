@@ -39,10 +39,8 @@ const styles = (theme) => ({
   tableHighlightedAltCell: theme.table.highlightedAltCell,
   tableDisabledRow: theme.table.disabledRow,
   tableDisabledCell: theme.table.disabledCell,
-  tableFooter: {
-    ...theme.table.footer,
-    display: 'flex',
-  },
+  // A flex footer leaves the table layout and squeezes the pager; as a table row it spans the table, pager on the right
+  tableFooter: theme.table.footer,
   pager: theme.table.pager,
   left: {
     textAlign: "left",
