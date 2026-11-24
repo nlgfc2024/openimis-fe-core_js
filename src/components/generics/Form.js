@@ -47,7 +47,9 @@ class Form extends Component {
   };
 
   save = (data) => {
-    this.setState({ saving: true }, this.props.save(data));
+    this.setState({ saving: true }, () => {
+      this.props.save(data);
+    });
   };
 
   render() {
